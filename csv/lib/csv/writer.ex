@@ -5,8 +5,6 @@ defmodule CSV.Writer do
   a single row or newline-separated rows.
   """
 
-  @must_escape %r{[",]}g        # " <- Emacs font-lock bug workaround
-
   def write(list) do
     list
     |> Enum.map(write_row(&1))
@@ -20,7 +18,7 @@ defmodule CSV.Writer do
   defp write_row([h|t], cols), do: write_row(t, [escape(h) | cols])
 
   defp escape(str) when is_binary(str) do
-    if Regex.match?(@must_escape, str) do
+    if String.contains?(str, "\"") or String.contains?(str, ",") do
       "\"" <> String.replace(str, "\"", "\"\"") <> "\""
     else
       str
