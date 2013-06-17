@@ -1,8 +1,8 @@
 defmodule CSV.Writer do
 
   @moduledoc """
-  The writer takes a list or a list of lists and returns a string containing
-  a single row or newline-separated rows.
+  The writer takes a list (write_row) or a list of lists (wrote) and returns
+  a string containing a single row or newline-separated rows.
   """
 
   def write(list) do
@@ -18,7 +18,7 @@ defmodule CSV.Writer do
   defp write_row([h|t], cols), do: write_row(t, [escape(h) | cols])
 
   defp escape(str) when is_binary(str) do
-    if String.contains?(str, "\"") or String.contains?(str, ",") do
+    if Regex.match?(%r{[\",\n]}g, str) do
       "\"" <> String.replace(str, "\"", "\"\"") <> "\""
     else
       str

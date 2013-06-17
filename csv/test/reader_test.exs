@@ -20,7 +20,7 @@ defmodule CsvReaderTest do
   ]
 
   # Compare parsed @test_input with @test_expected.
-  test "parser" do
+  test "reader" do
     both = Enum.zip @test_input, @test_expected
     Enum.each both, fn({input, expected}) -> read_test(input, expected) end
   end
