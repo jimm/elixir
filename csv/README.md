@@ -10,7 +10,7 @@ same type.
     [["abc","def","ghi"],["123","456","789"]]
 
     iex> CSV.read('abc,def,"gh"",""i"')
-    [['abc','def','gh","i"]]
+    [['abc','def','gh","i"']]
 
 The writer takes a list of lists (write) or a list (write_row) and returns a
 string. The writer always works with strings.
