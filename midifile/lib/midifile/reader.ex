@@ -60,6 +60,7 @@ defmodule Midifile.Reader do
   @doc """
   Returns a Sequence  record.
   """
+
   def read(path) do
     {:ok, f} = File.open(path, [:read, :binary])
     pos = look_for_chunk(f, 0, "MThd", :file.pread(f, 0, 4))
@@ -213,12 +214,12 @@ defmodule Midifile.Reader do
     {:ok, data} = :file.pread(f, pos + length_before_data, length)
     total_length = length_before_data + length
     case type do
-	    @meta_seq_num ->
+      @meta_seq_num ->
         debug("@meta_seq_num")
-	      [Event.new(symbol: :seq_num, delta_time: delta_time, bytes: [data]), total_length]
+        [Event.new(symbol: :seq_num, delta_time: delta_time, bytes: [data]), total_length]
       @meta_text ->
         debug("@meta_text")
-	      [Event.new(symbol: :text, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
+        [Event.new(symbol: :text, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
       @meta_copyright ->
         debug("@meta_copyright")
         [Event.new(symbol: :copyright, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
