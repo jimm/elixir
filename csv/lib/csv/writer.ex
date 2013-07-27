@@ -13,7 +13,7 @@ defmodule CSV.Writer do
 
   def write_row(list), do: write_row(list, [])
 
-  defp write_row([], cols), do: Enum.join :lists.reverse(cols), ","
+  defp write_row([], cols), do: Enum.join(:lists.reverse(cols), ",")
 
   defp write_row([h|t], cols), do: write_row(t, [escape(h) | cols])
 
