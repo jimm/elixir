@@ -8,8 +8,10 @@ defmodule CSV.Reader do
   """
 
   def read(str) when is_binary(str) do
-    read(binary_to_list(str), [])
-    |> Enum.map(fn(row) -> Enum.map(row, fn(col) -> list_to_binary(col) end) end)
+    read(:binary.bin_to_list(str), [])
+    |> Enum.map(fn(row) ->
+                    Enum.map(row, fn(col) -> :binary.list_to_bin(col) end)
+                end)
   end
 
   def read(chars) when is_list(chars), do: read(chars, [])
