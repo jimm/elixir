@@ -7,7 +7,7 @@ defmodule CSV.Writer do
 
   def write(list) do
     list
-    |> Enum.map(&(write_row(&1)))
+    |> Enum.map(&write_row/1)
     |> Enum.join("\n")
   end
 

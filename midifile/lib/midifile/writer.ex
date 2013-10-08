@@ -56,7 +56,7 @@ defmodule Midifile.Writer do
 
   def write(Sequence[header: header, conductor_track: ct, tracks: tracks], path) do
     l = [header_io_list(header, length(tracks) + 1) |
-  	     Enum.map([ct | tracks], &(track_io_list(&1)))]
+  	     Enum.map([ct | tracks], &track_io_list/1)]
     :ok = :file.write_file(path, l)
   end
 
@@ -73,7 +73,7 @@ defmodule Midifile.Writer do
   def track_io_list(Track[events: events]) do
     Process.put(:status, 0)
     Process.put(:chan, 0)
-    event_list =  Enum.map(events, &(event_io_list(&1)))
+    event_list =  Enum.map(events, &event_io_list/1)
     size = chunk_size(event_list)
     ["MTrk",
      (size >>> 24) &&& 255,
