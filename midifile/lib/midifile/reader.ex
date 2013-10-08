@@ -72,7 +72,7 @@ defmodule Midifile.Reader do
   end
 
   defp debug(msg) do
-    if @debug, do: IO.puts msg, else: nil
+    if @debug, do: IO.puts(msg), else: nil
   end
 
   # Only reason this is a macro is for speed.
@@ -219,25 +219,25 @@ defmodule Midifile.Reader do
         [Event.new(symbol: :seq_num, delta_time: delta_time, bytes: [data]), total_length]
       @meta_text ->
         debug("@meta_text")
-        [Event.new(symbol: :text, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
+        [Event.new(symbol: :text, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
       @meta_copyright ->
         debug("@meta_copyright")
-        [Event.new(symbol: :copyright, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
+        [Event.new(symbol: :copyright, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
       @meta_seq_name ->
         debug("@meta_seq_name")
-        [Event.new(symbol: :seq_name, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
+        [Event.new(symbol: :seq_name, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
       @meta_instrument ->
         debug("@meta_instrument")
-        [Event.new(symbol: :instrument, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
+        [Event.new(symbol: :instrument, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
       @meta_lyric ->
         debug("@meta_lyric")
-        [Event.new(symbol: :lyric, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
+        [Event.new(symbol: :lyric, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
       @meta_marker ->
         debug("@meta_marker")
-        [Event.new(symbol: :marker, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
+        [Event.new(symbol: :marker, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
       @meta_cue ->
         debug("@meta_cue")
-        [Event.new(symbol: :cue, delta_time: delta_time, bytes: binary_to_list(data)), total_length]
+        [Event.new(symbol: :cue, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
       @meta_midi_chan_prefix ->
         debug("@meta_midi_chan_prefix")
         [Event.new(symbol: :midi_chan_prefix, delta_time: delta_time, bytes: [data]), total_length]
