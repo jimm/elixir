@@ -26,7 +26,7 @@ defmodule Midifile.Reader do
   @status_eox 0xF7
 
   # System realtime messages
-  # MIDI clock (24 per quarter note)
+  # MIDI clock (24 per quarter note) klrjb
   @status_clock 0xF8
   # Sequence start
   @status_start 0xFA
@@ -154,7 +154,7 @@ defmodule Midifile.Reader do
     debug("read_event <<@status_nibble_on::size(4), chan::size(4), note::size(8), 0::size(8)>>")
     Process.put(:status, @status_nibble_on)
     Process.put(:chan, chan)
-    [Event.new(symbol: :off, delta_time: delta_time, bytes: [chan_status(@status_nibble_on, chan), note, 64]), 3]
+    [Event.new(symbol: :off, delta_time: delta_time, bytes: [chan_status(@status_nibble_off, chan), note, 64]), 3]
   end
 
   defp read_event(_f, _pos, delta_time, <<@status_nibble_on::size(4), chan::size(4), note::size(8), vel::size(8)>>) do
@@ -221,25 +221,25 @@ defmodule Midifile.Reader do
         [Event.new(symbol: :seq_num, delta_time: delta_time, bytes: [data]), total_length]
       @meta_text ->
         debug("@meta_text")
-        [Event.new(symbol: :text, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
+        [Event.new(symbol: :text, delta_time: delta_time, bytes: data), total_length]
       @meta_copyright ->
         debug("@meta_copyright")
-        [Event.new(symbol: :copyright, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
+        [Event.new(symbol: :copyright, delta_time: delta_time, bytes: data), total_length]
       @meta_seq_name ->
         debug("@meta_seq_name")
-        [Event.new(symbol: :seq_name, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
+        [Event.new(symbol: :seq_name, delta_time: delta_time, bytes: data), total_length]
       @meta_instrument ->
         debug("@meta_instrument")
-        [Event.new(symbol: :instrument, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
+        [Event.new(symbol: :instrument, delta_time: delta_time, bytes: data), total_length]
       @meta_lyric ->
         debug("@meta_lyric")
-        [Event.new(symbol: :lyric, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
+        [Event.new(symbol: :lyric, delta_time: delta_time, bytes: data), total_length]
       @meta_marker ->
         debug("@meta_marker")
-        [Event.new(symbol: :marker, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
+        [Event.new(symbol: :marker, delta_time: delta_time, bytes: data), total_length]
       @meta_cue ->
         debug("@meta_cue")
-        [Event.new(symbol: :cue, delta_time: delta_time, bytes: :binary.bin_to_list(data)), total_length]
+        [Event.new(symbol: :cue, delta_time: delta_time, bytes: data), total_length]
       @meta_midi_chan_prefix ->
         debug("@meta_midi_chan_prefix")
         [Event.new(symbol: :midi_chan_prefix, delta_time: delta_time, bytes: [data]), total_length]
@@ -260,8 +260,9 @@ defmodule Midifile.Reader do
       @meta_sequencer_specific ->
         debug("@meta_sequencer_specific")
         [Event.new(symbol: :seq_name, delta_time: delta_time, bytes: [data]), total_length]
-      _ ->
+      _UNKNOWN ->
         debug("unknown meta")
+        IO.puts "unknown == #{_UNKNOWN}" # DEBUG
         [Event.new(symbol: :unknown_meta, delta_time: delta_time, bytes: [type, data]), total_length]
     end
   end

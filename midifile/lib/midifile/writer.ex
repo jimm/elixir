@@ -1,6 +1,7 @@
 defmodule Midifile.Writer do
 
   use Bitwise
+  alias Midifile.Varlen
 
   # Channel messages
   @status_nibble_off 0x8
@@ -57,11 +58,11 @@ defmodule Midifile.Writer do
   def write(Sequence[header: header, conductor_track: ct, tracks: tracks], path) do
     l = [header_io_list(header, length(tracks) + 1) |
   	     Enum.map([ct | tracks], &track_io_list/1)]
-    :ok = :file.write_file(path, l)
+    :ok = :file.write_file(path, iolist_to_binary(l))
   end
 
   def header_io_list({:header, _, division}, num_tracks) do
-    ["MThd",
+    [?M, ?T, ?h, ?d,
      0, 0, 0, 6,                  # header chunk size
      0, 1,                        # format,
      (num_tracks >>> 8) &&& 255, # num tracks
@@ -75,7 +76,7 @@ defmodule Midifile.Writer do
     Process.put(:chan, 0)
     event_list =  Enum.map(events, &event_io_list/1)
     size = chunk_size(event_list)
-    ["MTrk",
+    [?M, ?T, ?r, ?k,
      (size >>> 24) &&& 255,
      (size >>> 16) &&& 255,
      (size >>>  8) &&& 255,
@@ -94,12 +95,13 @@ defmodule Midifile.Writer do
 
   def io_list_element_size(_e), do: 1
 
-  def event_io_list({:off, delta_time, [chan, note, vel]}) do
+  def event_io_list(Event[symbol: :off, delta_time: delta_time, bytes: [status, note, vel]]) do
+    chan = status &&& 0x0f
     running_status = Process.get(:status)
     running_chan = Process.get(:chan)
     if running_chan == chan and (running_status == @status_nibble_off or
   	                             (running_status == @status_nibble_on and vel == 64)) do
-  	    status = []
+  	    status = []             # do not output a status
   	    outvel = 0
     else
   	    status = (@status_nibble_off <<< 4) + chan
@@ -107,77 +109,69 @@ defmodule Midifile.Writer do
   	    Process.put(:status, @status_nibble_off)
   	    Process.put(:chan, chan)
     end
-    [var_len(delta_time), status, note, outvel]
+    [Varlen.write(delta_time), status, note, outvel]
   end
 
-  def event_io_list({:on, delta_time, [chan, note, vel]}),                 do: [var_len(delta_time), running_status(@status_nibble_on, chan), note, vel]
-  def event_io_list({:poly_press, delta_time, [chan, note, amount]}),      do: [var_len(delta_time), running_status(@status_nibble_poly_press, chan), note, amount]
-  def event_io_list({:controller, delta_time, [chan, controller, value]}), do: [var_len(delta_time), running_status(@status_nibble_controller, chan), controller, value]
-  def event_io_list({:program, delta_time, [chan, program]}),              do: [var_len(delta_time), running_status(@status_nibble_program_change, chan), program]
-  def event_io_list({:chan_press, delta_time, [chan, amount]}),            do: [var_len(delta_time), running_status(@status_nibble_channel_pressure, chan), amount]
+  def event_io_list(Event[symbol: :on, delta_time: delta_time, bytes: [status, note, vel]]),                 do: [Varlen.write(delta_time), running_status(status), note, vel]
+  def event_io_list(Event[symbol: :poly_press, delta_time: delta_time, bytes: [status, note, amount]]),      do: [Varlen.write(delta_time), running_status(status), note, amount]
+  def event_io_list(Event[symbol: :controller, delta_time: delta_time, bytes: [status, controller, value]]), do: [Varlen.write(delta_time), running_status(status), controller, value]
+  def event_io_list(Event[symbol: :program, delta_time: delta_time, bytes: [status, program]]),              do: [Varlen.write(delta_time), running_status(status), program]
+  def event_io_list(Event[symbol: :chan_press, delta_time: delta_time, bytes: [status, amount]]),            do: [Varlen.write(delta_time), running_status(status), amount]
 
-  def event_io_list({:pitch_bend, delta_time, [chan, <<0::size(2), msb::size(7), lsb::size(7)>>]}) do
-    [var_len(delta_time), running_status(@status_nibble_pitch_bend, chan), <<0::size(1), lsb::size(7), 0::size(1), msb::size(7)>>]
+  def event_io_list(Event[symbol: :pitch_bend, delta_time: delta_time, bytes: [status, <<0::size(2), msb::size(7), lsb::size(7)>>]]) do
+    [Varlen.write(delta_time), running_status(status), <<0::size(1), lsb::size(7), 0::size(1), msb::size(7)>>]
   end
 
-  def event_io_list({:track_end, delta_time}) do
+  def event_io_list(Event[symbol: :track_end, delta_time: delta_time, bytes: _]) do
     Process.put(:status, @status_meta_event)
-    [var_len(delta_time), @status_meta_event, @meta_track_end, 0]
+    [Varlen.write(delta_time), @status_meta_event, @meta_track_end, 0]
   end
 
-  def event_io_list({:seq_num, delta_time, [data]}),          do: meta_io_list(delta_time, @meta_seq_num, data)
-  def event_io_list({:text, delta_time, data}),               do: meta_io_list(delta_time, @meta_text, data)
-  def event_io_list({:copyright, delta_time, data}),          do: meta_io_list(delta_time, @meta_copyright, data)
-  def event_io_list({:seq_name, delta_time, data}) do
-    Process.put(:status, @status_meta_event)
-    meta_io_list(delta_time, @meta_track_end, data)
-  end
-  def event_io_list({:instrument, delta_time, data}),         do: meta_io_list(delta_time, @meta_instrument, data)
-  def event_io_list({:lyric, delta_time, data}),              do: meta_io_list(delta_time, @meta_lyric, data)
-  def event_io_list({:marker, delta_time, data}),             do: meta_io_list(delta_time, @meta_marker, data)
-  def event_io_list({:cue, delta_time, data}),                do: meta_io_list(delta_time, @meta_cue, data)
-  def event_io_list({:midi_chan_prefix, delta_time, [data]}), do: meta_io_list(delta_time, @meta_midi_chan_prefix, data)
+  def event_io_list(Event[symbol: :seq_num, delta_time: delta_time, bytes: data]),            do: meta_io_list(delta_time, @meta_seq_num, data)
+  def event_io_list(Event[symbol: :text, delta_time: delta_time, bytes: data]),               do: meta_io_list(delta_time, @meta_text, data)
+  def event_io_list(Event[symbol: :copyright, delta_time: delta_time, bytes: data]),          do: meta_io_list(delta_time, @meta_copyright, data)
+  def event_io_list(Event[symbol: :seq_name, delta_time: delta_time, bytes: data]),           do: meta_io_list(delta_time, @meta_seq_name, data)
+  def event_io_list(Event[symbol: :instrument, delta_time: delta_time, bytes: data]),         do: meta_io_list(delta_time, @meta_instrument, data)
+  def event_io_list(Event[symbol: :lyric, delta_time: delta_time, bytes: data]),              do: meta_io_list(delta_time, @meta_lyric, data)
+  def event_io_list(Event[symbol: :marker, delta_time: delta_time, bytes: data]),             do: meta_io_list(delta_time, @meta_marker, data)
+  def event_io_list(Event[symbol: :cue, delta_time: delta_time, bytes: data]),                do: meta_io_list(delta_time, @meta_cue, data)
+  def event_io_list(Event[symbol: :midi_chan_prefix, delta_time: delta_time, bytes: [data]]), do: meta_io_list(delta_time, @meta_midi_chan_prefix, data)
 
-  def event_io_list({:tempo, delta_time, [data]}) do
+  def event_io_list(Event[symbol: :tempo, delta_time: delta_time, bytes: [data]]) do
     Process.put(:status, @status_meta_event)
-    [var_len(delta_time), @status_meta_event, @meta_set_tempo, var_len(3),
+    [Varlen.write(delta_time), @status_meta_event, @meta_set_tempo, Varlen.write(3),
      (data >>> 16) &&& 255,
      (data >>>  8) &&& 255,
       data         &&& 255]
   end
 
-  def event_io_list({:smpte, delta_time, [data]}),              do: meta_io_list(delta_time, @meta_smpte, data)
-  def event_io_list({:time_signature, delta_time, [data]}),     do: meta_io_list(delta_time, @meta_time_sig, data)
-  def event_io_list({:key_signature, delta_time, [data]}),      do: meta_io_list(delta_time, @meta_key_sig, data)
-  def event_io_list({:sequencer_specific, delta_time, [data]}), do: meta_io_list(delta_time, @meta_sequencer_specific, data)
-  def event_io_list({:unknown_meta, delta_time, [type, data]}), do: meta_io_list(delta_time, type, data)
+  def event_io_list(Event[symbol: :smpte, delta_time: delta_time, bytes: [data]]),              do: meta_io_list(delta_time, @meta_smpte, data)
+  def event_io_list(Event[symbol: :time_signature, delta_time: delta_time, bytes: [data]]),     do: meta_io_list(delta_time, @meta_time_sig, data)
+  def event_io_list(Event[symbol: :key_signature, delta_time: delta_time, bytes: [data]]),      do: meta_io_list(delta_time, @meta_key_sig, data)
+  def event_io_list(Event[symbol: :sequencer_specific, delta_time: delta_time, bytes: [data]]), do: meta_io_list(delta_time, @meta_sequencer_specific, data)
+  def event_io_list(Event[symbol: :unknown_meta, delta_time: delta_time, bytes: [type, data]]), do: meta_io_list(delta_time, type, data)
 
   def meta_io_list(delta_time, type, data) when is_binary(data) do
     Process.put(:status, @status_meta_event)
-    [var_len(delta_time), @status_meta_event, type, var_len(size(data)), data]
+    [Varlen.write(delta_time), @status_meta_event, type, Varlen.write(size(data)), data]
   end
 
   def meta_io_list(delta_time, type, data) do
     Process.put(:status, @status_meta_event)
-    [var_len(delta_time), @status_meta_event, type, var_len(length(data)), data]
+    [Varlen.write(delta_time), @status_meta_event, type, Varlen.write(length(data)), data]
   end
 
-  def running_status(high_nibble, chan) do
+  def running_status(status) do
     running_status = Process.get(:status)
     running_chan = Process.get(:chan)
+    high_nibble = status >>> 4
+    chan = status &&& 0x0f
     if running_status == high_nibble and running_chan == chan do
-  	    []
+  	    []                      # do not output a byte
     else
   	    Process.put(:status, high_nibble)
   	    Process.put(:chan, chan)
-  	    (high_nibble <<< 4) + chan
+        status
     end
   end
-
-  def var_len(i) when i < (1 <<< 7),  do: <<0::size(1), i::size(7)>>
-  def var_len(i) when i < (1 <<< 14), do: <<1::size(1), (i >>> 7)::size(7), 0::size(1), i::size(7)>>
-  def var_len(i) when i < (1 <<< 21), do: <<1::size(1), (i >>> 14)::size(7), 1::size(1), (i >>> 7)::size(7), 0::size(1), i::size(7)>>
-  def var_len(i) when i < (1 <<< 28), do: <<1::size(1), (i >>> 21)::size(7), 1::size(1), (i >>> 14)::size(7), 1::size(1), (i >>> 7)::size(7), 0::size(1), i::size(7)>>
-  def var_len(i),                     do: exit("Value #{i} is too big for a variable length number")
-
 end
