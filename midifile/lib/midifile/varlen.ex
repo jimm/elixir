@@ -6,23 +6,23 @@ defmodule Midifile.Varlen do
   Reads and writes varlen values.
   """
 
-  def read({:ok, <<0::size(1), b0::size(7), _::size(24)>>}) do
+  def read(<<0::size(1), b0::size(7), _::size(24)>>) do
     [b0, 1]
   end
 
-  def read({:ok, <<1::size(1), b0::size(7), 0::size(1), b1::size(7), _::size(16)>>}) do
+  def read(<<1::size(1), b0::size(7), 0::size(1), b1::size(7), _::size(16)>>) do
     [(b0 <<< 7) + b1, 2]
   end
 
-  def read({:ok, <<1::size(1), b0::size(7), 1::size(1), b1::size(7), 0::size(1), b2::size(7), _::size(8)>>}) do
+  def read(<<1::size(1), b0::size(7), 1::size(1), b1::size(7), 0::size(1), b2::size(7), _::size(8)>>) do
     [(b0 <<< 14) + (b1 <<< 7) + b2, 3]
   end
 
-  def read({:ok, <<1::size(1), b0::size(7), 1::size(1), b1::size(7), 1::size(1), b2::size(7), 0::size(1), b3::size(7)>>}) do
+  def read(<<1::size(1), b0::size(7), 1::size(1), b1::size(7), 1::size(1), b2::size(7), 0::size(1), b3::size(7)>>) do
     [(b0 <<< 21) + (b1 <<< 14) + (b2 <<< 7) + b3, 4]
   end
 
-  def read({:ok, <<1::size(1), b0::size(7), 1::size(1), b1::size(7), 1::size(1), b2::size(7), 1::size(1), b3::size(7)>>}) do
+  def read(<<1::size(1), b0::size(7), 1::size(1), b1::size(7), 1::size(1), b2::size(7), 1::size(1), b3::size(7)>>) do
     # IO.puts("WARNING: bad var len format; all 4 bytes have high bit set")
     [(b0 <<< 21) + (b1 <<< 14) + (b2 <<< 7) + b3, 4]
   end

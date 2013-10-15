@@ -4,7 +4,8 @@ defmodule Midifile do
     Midifile.Reader.read(path)
   end
 
-  def write(_sequence, _path) do
+  def write(sequence, path) do
+    Midifile.Writer.write(sequence, path)
   end
 
 end

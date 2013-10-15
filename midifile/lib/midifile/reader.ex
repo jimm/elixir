@@ -134,7 +134,8 @@ defmodule Midifile.Reader do
 
   defp event_list(f, pos, bytes_to_read, events) do
     debug("event_list")
-    [delta_time, var_len_bytes_used] = Varlen.read(:file.pread(f, pos, 4))
+    {:ok, bin} = :file.pread(f, pos, 4)
+    [delta_time, var_len_bytes_used] = Varlen.read(bin)
     {:ok, three_bytes} = :file.pread(f, pos + var_len_bytes_used, 3)
     [event, event_bytes_read] = read_event(f, pos + var_len_bytes_used, delta_time, three_bytes)
     bytes_read = var_len_bytes_used + event_bytes_read
@@ -209,7 +210,8 @@ defmodule Midifile.Reader do
     debug("read_event <<@status_meta_event::size(8), type::size(8), _::size(8)>>")
     Process.put(:status, @status_meta_event)
     Process.put(:chan, 0)
-    [length, length_bytes_used] = Varlen.read(:file.pread(f, pos + 2, 4))
+    {:ok, bin} = :file.pread(f, pos + 2, 4)
+    [length, length_bytes_used] = Varlen.read(bin)
     length_before_data = length_bytes_used + 2
     {:ok, data} = :file.pread(f, pos + length_before_data, length)
     total_length = length_before_data + length
@@ -268,7 +270,8 @@ defmodule Midifile.Reader do
     debug("read_event <<@status_sysex::size(8), _::size(16)>>")
     Process.put(:status, @status_sysex)
     Process.put(:chan, 0)
-    [length, length_bytes_used] = Varlen.read(:file.pread(f, pos + 1, 4))
+    {:ok, bin} = :file.pread(f, pos + 1, 4)
+    [length, length_bytes_used] = Varlen.read(bin)
     {:ok, data} = :file.pread(f, pos + length_bytes_used, length)
     [{:sysex, delta_time, [data]}, length_bytes_used + length]
   end
