@@ -10,8 +10,7 @@ defrecord Track,
   def instrument(Track[events: nil]), do: ""
   def instrument(Track[events: []]),  do: ""
   def instrument(Track[events: list])  do
-    e = Enum.find(list, Event[symbol: :dummy, delta_time: 0, bytes: ""], &(&1.symbol == :instrument))
-    e.bytes
+    Enum.find(list, Event[], &(&1.symbol == :instrument)).bytes
   end
 end
 
@@ -23,8 +22,7 @@ defrecord Sequence,
   def name(Sequence[conductor_track: nil]), do: ""
   def name(Sequence[conductor_track: Track[events: []]]),  do: ""
   def name(Sequence[conductor_track: Track[events: list]])  do
-    e = Enum.find(list, Event[symbol: :dummy, delta_time: 0, bytes: ""], &(&1.symbol == :seq_name))
-    e.bytes
+    Enum.find(list, Event[], &(&1.symbol == :seq_name)).bytes
   end
 
 end
