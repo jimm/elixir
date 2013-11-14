@@ -32,7 +32,7 @@ defmodule SimpleCache.Element do
     :gen_server.cast(pid, :delete)
   end
 
-  # ================ API ================
+  # ================ GenServer ================
 
   def init([value, lease_time]) do
     now = :calendar.local_time()

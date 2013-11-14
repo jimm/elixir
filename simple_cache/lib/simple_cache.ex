@@ -5,8 +5,6 @@ defmodule SimpleCache do
   alias SimpleCache.Supervisor
   alias SimpleCache.Element
 
-  # See http://elixir-lang.org/docs/stable/Application.Behaviour.html
-  # for more information on OTP Applications
   def start(_type, _args) do
     Store.init
     case Supervisor.start_link do
