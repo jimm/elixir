@@ -29,7 +29,6 @@ defmodule SimpleCache do
     try do
       {:ok, pid} = Store.lookup(key)
       {:ok, value} = Element.fetch(pid)
-      {:ok, value}
     catch
       _, _ ->
         {:error, :not_found}
