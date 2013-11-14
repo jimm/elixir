@@ -73,7 +73,7 @@ defmodule SimpleCache.Element do
   end
 
   def terminate(_reason, _state) do
-    SimpleCache.Store.delete(inspect(self()))
+    SimpleCache.Store.delete(self())
     :ok
   end
 
