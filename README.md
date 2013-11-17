@@ -10,3 +10,12 @@ very simple to provide file I/O.
 ## Midifile
 
 A MIDI file reader/writer.
+
+## SimpleCache
+
+A translation to Elixir of the simple cache application from _Erlang and OTP
+in Action_.
+
+## TCP RPC
+
+A translation to Elixir of an exercise from _Erlang and OTP in Action_.
