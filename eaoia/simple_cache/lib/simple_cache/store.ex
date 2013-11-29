@@ -1,25 +1,43 @@
-defmodule SimpleCache.Store do
+use Amnesia
 
-  @table_id __MODULE__
+defdatabase SimpleCache.Store do
 
-  def init do
-    :ets.new(@table_id, [:public, :named_table])
-    :ok
+  def init(mnesia_node) do
+    Amnesia.master_nodes [mnesia_node]
+    Amnesia.Schema.create([mnesia_node])
+    Amnesia.start
+    create(disk: [mnesia_node]) # where to keep copies on disk
   end
 
+  # Could use deftablep, but that inhibits IEx testing.
+  deftable KeyToPid, [:key, :pid], index: :pid
+
   def insert(key, pid) do
-    :ets.insert(@table_id, {key, pid})
+    KeyToPid[key: key, pid: pid].write!
   end
 
   def lookup(key) do
-    case :ets.lookup(@table_id, key) do
-      [{_key, pid}] -> {:ok, pid}
-      [] -> {:error, :not_found}
+    case KeyToPid.read!(key) do
+      nil ->
+        {:error, :not_found}
+      ktp ->
+        case pid_alive?(ktp.pid) do
+          true -> {:ok, ktp.pid}
+          false -> {:error, :not_found}
+        end
     end
   end
 
   def delete(pid) do
-    :ets.match_delete(@table_id, {:_, pid})
+    KeyToPid.delete(:pid, pid)
   end
 
+  defp pid_alive?(pid) when node(pid) == :erlang.node() do
+    Process.alive?(pid)
+  end
+
+  defp pid_alive?(pid) do
+    np = :erlang.node(pid)
+    Enum.member?(Node.list(), np) and :rpc.call(np, :erlang, :is_process_alive, [pid]) == true
+  end
 end

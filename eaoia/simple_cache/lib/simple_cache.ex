@@ -7,7 +7,7 @@ defmodule SimpleCache do
   alias SimpleCache.Event
 
   def start(_type, _args) do
-    Store.init
+    Store.init(discover_mnesia_node())
     case Supervisor.start_link do
       {:ok, pid} ->
         Event.startup
@@ -50,5 +50,10 @@ defmodule SimpleCache do
     end
     Event.delete(key)
     retval
+  end
+
+  defp discover_mnesia_node do
+    # FIXME
+    :"mn@widget"
   end
 end
