@@ -2,7 +2,7 @@ defmodule ResourceDiscovery.Manager do
   use GenServer.Behaviour
 
   @server __MODULE__
-  @debug false
+  @debug true
 
   defrecord State,
     target_resource_types: HashSet.new, # desired type keywords
@@ -112,7 +112,7 @@ defmodule ResourceDiscovery.Manager do
                 Enum.map(set, &({type, &1})) ++ acc
             end
         end
-    HashSet.new(:lists.foldl(f, [], types))
+    HashSet.reduce(types, [], f)
   end
 
   if @debug do
