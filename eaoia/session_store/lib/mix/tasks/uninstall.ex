@@ -2,6 +2,8 @@ defmodule Mix.Tasks.Uninstall do
   use Mix.Task
   use SessionStore.Database
 
+  @shortdoc "Destroy the database"
+
   def run(_) do
     # Start mnesia, or we can't do much.
     Amnesia.start

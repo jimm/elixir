@@ -1,5 +1,4 @@
 [ "amnesia": {:git, "git://github.com/meh/amnesia.git", "17368bd75b172c977d1597d717ac5f22d59c2841", []},
   "continuum": {:git, "git://github.com/meh/continuum.git", "c19240908b876667a07fd44c0cec7befed713e2e", []},
   "datastructures": {:git, "git://github.com/meh/elixir-datastructures.git", "0b4c449f69f17c31d7bf280c910c774ed80802e1", []},
-  "elixir-resource-discovery": {:git, "git://github.com/jimm/elixir-resource-discovery.git", "68a0ab0d274b174e1d60e763b357ccee528f211a", []},
   "exquisite": {:git, "git://github.com/meh/exquisite.git", "ed93abd4bb9cd33dec0343e4fef60726f5127c46", []} ]

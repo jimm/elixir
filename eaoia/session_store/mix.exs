@@ -10,10 +10,9 @@ defmodule SessionStore.Mixfile do
 
   # Configuration for the OTP application
   def application do
-    [
-     mod: { SessionStore, [] },
-     applications: [:"elixir-resource-discovery"
-    ]
+    [ mod: { SessionStore, [] } ]
+    # [ mod: { SessionStore, [] },
+    #   applications: [:"elixir_resource_discovery" ] ]
   end
 
   # Returns the list of dependencies in the format:
@@ -22,13 +21,8 @@ defmodule SessionStore.Mixfile do
   # To specify particular versions, regardless of the tag, do:
   # { :barbat, "~> 0.1", github: "elixir-lang/barbat.git" }
   defp deps do
-    [
-     {:"elixir-resource-discovery", ">= 0.0.1", github: "jimm/elixir-resource-discovery"},
-     {:amnesia, ">= 0.1.1", github: "meh/amnesia"}
-    ]
-  end
-
-  def db_create do
-    Amnesia.Schema.create
+    [ {:amnesia, ">= 0.1.1", github: "meh/amnesia"} ]
+    # [ {:"elixir_resource_discovery", ">= 0.0.1", github: "jimm/elixir_resource_discovery"},
+    #   {:amnesia, ">= 0.1.1", github: "meh/amnesia"} ]
   end
 end
