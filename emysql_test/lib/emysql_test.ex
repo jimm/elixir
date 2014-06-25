@@ -3,8 +3,8 @@ defmodule EmysqlTest do
   @test_table "emysql_test"
 
   @doc """
-  Create a test table, insert some records, print the number of records,
-  and delete the table.
+  Create a test table, insert some records, select some data, and delete the
+  table.
 
   See :emysql.add_pool/2 for possible keyword args.
   """
