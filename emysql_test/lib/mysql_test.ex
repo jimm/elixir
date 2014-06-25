@@ -1,4 +1,4 @@
-defmodule MySQLTest do
+defmodule EmysqlTest do
 
   def run(opts) do
     opts = [host: 'localhost',

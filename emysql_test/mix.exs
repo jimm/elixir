@@ -1,8 +1,8 @@
-defmodule MySQLTest.Mixfile do
+defmodule EmysqlTest.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :mysql_test,
+    [app: :emysql_test,
      version: "0.0.1",
      elixir: "~> 0.14.1",
      deps: deps]

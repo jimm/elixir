@@ -1,4 +1,4 @@
-defmodule MySQLTest.Test do
+defmodule EmysqlTest.Test do
   use ExUnit.Case
 
   test "the truth" do
