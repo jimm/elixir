@@ -30,7 +30,9 @@ defmodule EmysqlTest do
 
   # Execute SQL and return the results as a list of maps.
   defp execute(conn, sql) do
-    :emysql.execute(conn, sql) |> results_to_maps
+    :emysql.execute(conn, sql)
+      |> :emysql.as_proplist
+      |> Enum.map(&(Enum.into(&1, %{})))
   end
 
   # Convert string to char list.
@@ -55,12 +57,5 @@ defmodule EmysqlTest do
 
   defp drop_test_table do
     :emysql.execute(:test_pool, "drop table if exists #{@test_table}")
-  end
-
-  # Convert Emysql results to a list of maps.
-  defp results_to_maps(results) do
-    results
-      |> :emysql.as_proplist
-      |> Enum.map(&(Enum.into(&1, %{})))
   end
 end
