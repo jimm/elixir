@@ -68,7 +68,7 @@ defmodule Midifile.Reader do
     tracks = read_tracks(f, num_tracks, pos + 10, [])
     File.close(f)
     [conductor_track | remaining_tracks] = tracks
-    Sequence.new(header: header, conductor_track: conductor_track, tracks: remaining_tracks)
+    %Sequence{header: header, conductor_track: conductor_track, tracks: remaining_tracks}
   end
 
   defp debug(msg) do
@@ -119,7 +119,7 @@ defmodule Midifile.Reader do
     bytes_to_read = parse_track_header(:file.pread(f, track_start, 4))
     Process.put(:status, 0)
     Process.put(:chan, -1)
-    [Track.new(events: event_list(f, track_start + 4, bytes_to_read, [])), track_start + 4 + bytes_to_read]
+    [%Track{events: event_list(f, track_start + 4, bytes_to_read, [])}, track_start + 4 + bytes_to_read]
   end
 
   defp parse_track_header({:ok, <<bytes_to_read::size(32)>>}) do
@@ -146,7 +146,7 @@ defmodule Midifile.Reader do
     debug("read_event <<@status_nibble_off::size(4), chan::size(4), note::size(8), vel::size(8)>>")
     Process.put(:status, @status_nibble_off)
     Process.put(:chan, chan)
-    [Event.new(symbol: :off, delta_time: delta_time, bytes: [chan_status(@status_nibble_off, chan), note, vel]), 3]
+    [%Event{symbol: :off, delta_time: delta_time, bytes: [chan_status(@status_nibble_off, chan), note, vel]}, 3]
   end
 
   # note on, velocity 0 is a note off
@@ -154,56 +154,56 @@ defmodule Midifile.Reader do
     debug("read_event <<@status_nibble_on::size(4), chan::size(4), note::size(8), 0::size(8)>>")
     Process.put(:status, @status_nibble_on)
     Process.put(:chan, chan)
-    [Event.new(symbol: :off, delta_time: delta_time, bytes: [chan_status(@status_nibble_off, chan), note, 64]), 3]
+    [%Event{symbol: :off, delta_time: delta_time, bytes: [chan_status(@status_nibble_off, chan), note, 64]}, 3]
   end
 
   defp read_event(_f, _pos, delta_time, <<@status_nibble_on::size(4), chan::size(4), note::size(8), vel::size(8)>>) do
     debug("read_event <<@status_nibble_on::size(4), chan::size(4), note::size(8), vel::size(8)>>")
     Process.put(:status, @status_nibble_on)
     Process.put(:chan, chan)
-    [Event.new(symbol: :on, delta_time: delta_time, bytes: [chan_status(@status_nibble_on, chan), note, vel]), 3]
+    [%Event{symbol: :on, delta_time: delta_time, bytes: [chan_status(@status_nibble_on, chan), note, vel]}, 3]
   end
 
   defp read_event(_f, _pos, delta_time, <<@status_nibble_poly_press::size(4), chan::size(4), note::size(8), amount::size(8)>>) do
     debug("read_event <<@status_nibble_poly_press::size(4), chan::size(4), note::size(8), amount::size(8)>>")
     Process.put(:status, @status_nibble_poly_press)
     Process.put(:chan, chan)
-    [Event.new(symbol: :poly_press, delta_time: delta_time, bytes: [chan_status(@status_nibble_poly_press, chan), note, amount]), 3]
+    [%Event{symbol: :poly_press, delta_time: delta_time, bytes: [chan_status(@status_nibble_poly_press, chan), note, amount]}, 3]
   end
 
   defp read_event(_f, _pos, delta_time, <<@status_nibble_controller::size(4), chan::size(4), controller::size(8), value::size(8)>>) do
     debug("read_event <<@status_nibble_controller::size(4), chan::size(4), controller::size(8), value::size(8)>>")
     Process.put(:status, @status_nibble_controller)
     Process.put(:chan, chan)
-    [Event.new(symbol: :controller, delta_time: delta_time, bytes: [chan_status(@status_nibble_controller, chan), controller, value]), 3]
+    [%Event{symbol: :controller, delta_time: delta_time, bytes: [chan_status(@status_nibble_controller, chan), controller, value]}, 3]
   end
 
   defp read_event(_f, _pos, delta_time, <<@status_nibble_program_change::size(4), chan::size(4), program::size(8), _::size(8)>>) do
     debug("read_event <<@status_nibble_program_change::size(4), chan::size(4), program::size(8), _::size(8)>>")
     Process.put(:status, @status_nibble_program_change)
     Process.put(:chan, chan)
-    [Event.new(symbol: :program, delta_time: delta_time, bytes: [chan_status(@status_nibble_program_change, chan), program]), 2]
+    [%Event{symbol: :program, delta_time: delta_time, bytes: [chan_status(@status_nibble_program_change, chan), program]}, 2]
   end
 
   defp read_event(_f, _pos, delta_time, <<@status_nibble_channel_pressure::size(4), chan::size(4), amount::size(8), _::size(8)>>) do
     debug("read_event <<@status_nibble_channel_pressure::size(4), chan::size(4), amount::size(8), _::size(8)>>")
     Process.put(:status, @status_nibble_channel_pressure)
     Process.put(:chan, chan)
-    [Event.new(symbol: :chan_press, delta_time: delta_time, bytes: [chan_status(@status_nibble_channel_pressure, chan), amount]), 2]
+    [%Event{symbol: :chan_press, delta_time: delta_time, bytes: [chan_status(@status_nibble_channel_pressure, chan), amount]}, 2]
   end
 
   defp read_event(_f, _pos, delta_time, <<@status_nibble_pitch_bend::size(4), chan::size(4), 0::size(1), lsb::size(7), 0::size(1), msb::size(7)>>) do
     debug("read_event <<@status_nibble_pitch_bend::size(4), chan::size(4), 0::size(1), lsb::size(7), 0::size(1), msb::size(7)>>")
     Process.put(:status, @status_nibble_pitch_bend)
     Process.put(:chan, chan)
-    [Event.new(symbol: :pitch_bend, delta_time: delta_time, bytes: [chan_status(@status_nibble_pitch_bend, chan), <<0::size(2), msb::size(7), lsb::size(7)>>]), 3]
+    [%Event{symbol: :pitch_bend, delta_time: delta_time, bytes: [chan_status(@status_nibble_pitch_bend, chan), <<0::size(2), msb::size(7), lsb::size(7)>>]}, 3]
   end
 
   defp read_event(_f, _pos, delta_time, <<@status_meta_event::size(8), @meta_track_end::size(8), 0::size(8)>>) do
     debug("read_event <<@status_meta_event::size(8), @meta_track_end::size(8), 0::size(8)>>")
     Process.put(:status, @status_meta_event)
     Process.put(:chan, 0)
-    [Event.new(symbol: :track_end, delta_time: delta_time, bytes: []), 3]
+    [%Event{symbol: :track_end, delta_time: delta_time, bytes: []}, 3]
   end
 
   defp read_event(f, pos, delta_time, <<@status_meta_event::size(8), type::size(8), _::size(8)>>) do
@@ -218,52 +218,52 @@ defmodule Midifile.Reader do
     case type do
       @meta_seq_num ->
         debug("@meta_seq_num")
-        [Event.new(symbol: :seq_num, delta_time: delta_time, bytes: [data]), total_length]
+        [%Event{symbol: :seq_num, delta_time: delta_time, bytes: [data]}, total_length]
       @meta_text ->
         debug("@meta_text")
-        [Event.new(symbol: :text, delta_time: delta_time, bytes: data), total_length]
+        [%Event{symbol: :text, delta_time: delta_time, bytes: data}, total_length]
       @meta_copyright ->
         debug("@meta_copyright")
-        [Event.new(symbol: :copyright, delta_time: delta_time, bytes: data), total_length]
+        [%Event{symbol: :copyright, delta_time: delta_time, bytes: data}, total_length]
       @meta_seq_name ->
         debug("@meta_seq_name")
-        [Event.new(symbol: :seq_name, delta_time: delta_time, bytes: data), total_length]
+        [%Event{symbol: :seq_name, delta_time: delta_time, bytes: data}, total_length]
       @meta_instrument ->
         debug("@meta_instrument")
-        [Event.new(symbol: :instrument, delta_time: delta_time, bytes: data), total_length]
+        [%Event{symbol: :instrument, delta_time: delta_time, bytes: data}, total_length]
       @meta_lyric ->
         debug("@meta_lyric")
-        [Event.new(symbol: :lyric, delta_time: delta_time, bytes: data), total_length]
+        [%Event{symbol: :lyric, delta_time: delta_time, bytes: data}, total_length]
       @meta_marker ->
         debug("@meta_marker")
-        [Event.new(symbol: :marker, delta_time: delta_time, bytes: data), total_length]
+        [%Event{symbol: :marker, delta_time: delta_time, bytes: data}, total_length]
       @meta_cue ->
         debug("@meta_cue")
-        [Event.new(symbol: :cue, delta_time: delta_time, bytes: data), total_length]
+        [%Event{symbol: :cue, delta_time: delta_time, bytes: data}, total_length]
       @meta_midi_chan_prefix ->
         debug("@meta_midi_chan_prefix")
-        [Event.new(symbol: :midi_chan_prefix, delta_time: delta_time, bytes: [data]), total_length]
+        [%Event{symbol: :midi_chan_prefix, delta_time: delta_time, bytes: [data]}, total_length]
       @meta_set_tempo ->
         debug("@meta_set_tempo")
         # data is microseconds per quarter note, in three bytes
         <<b0::size(8), b1::size(8), b2::size(8)>> = data
-        [Event.new(symbol: :tempo, delta_time: delta_time, bytes: [(b0 <<< 16) + (b1 <<< 8) + b2]), total_length]
+        [%Event{symbol: :tempo, delta_time: delta_time, bytes: [(b0 <<< 16) + (b1 <<< 8) + b2]}, total_length]
       @meta_smpte ->
         debug("@meta_smpte")
-        [Event.new(symbol: :smpte, delta_time: delta_time, bytes: [data]), total_length]
+        [%Event{symbol: :smpte, delta_time: delta_time, bytes: [data]}, total_length]
       @meta_time_sig ->
         debug("@meta_time_sig")
-        [Event.new(symbol: :time_signature, delta_time: delta_time, bytes: [data]), total_length]
+        [%Event{symbol: :time_signature, delta_time: delta_time, bytes: [data]}, total_length]
       @meta_key_sig ->
         debug("@meta_key_sig")
-        [Event.new(symbol: :key_signature, delta_time: delta_time, bytes: [data]), total_length]
+        [%Event{symbol: :key_signature, delta_time: delta_time, bytes: [data]}, total_length]
       @meta_sequencer_specific ->
         debug("@meta_sequencer_specific")
-        [Event.new(symbol: :seq_name, delta_time: delta_time, bytes: [data]), total_length]
+        [%Event{symbol: :seq_name, delta_time: delta_time, bytes: [data]}, total_length]
       _UNKNOWN ->
         debug("unknown meta")
         IO.puts "unknown == #{_UNKNOWN}" # DEBUG
-        [Event.new(symbol: :unknown_meta, delta_time: delta_time, bytes: [type, data]), total_length]
+        [%Event{symbol: :unknown_meta, delta_time: delta_time, bytes: [type, data]}, total_length]
     end
   end
 

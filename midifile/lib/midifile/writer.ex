@@ -55,10 +55,10 @@ defmodule Midifile.Writer do
   MIDI file writer.
   """
 
-  def write(Sequence[header: header, conductor_track: ct, tracks: tracks], path) do
+  def write(%Sequence{header: header, conductor_track: ct, tracks: tracks}, path) do
     l = [header_io_list(header, length(tracks) + 1) |
   	     Enum.map([ct | tracks], &track_io_list/1)]
-    :ok = :file.write_file(path, iolist_to_binary(l))
+    :ok = :file.write_file(path, IO.iodata_to_binary(l))
   end
 
   def header_io_list({:header, _, division}, num_tracks) do
@@ -71,7 +71,7 @@ defmodule Midifile.Writer do
       division        &&& 255]
   end
 
-  def track_io_list(Track[events: events]) do
+  def track_io_list(%Track{events: events}) do
     Process.put(:status, 0)
     Process.put(:chan, 0)
     event_list =  Enum.map(events, &event_io_list/1)
@@ -95,7 +95,7 @@ defmodule Midifile.Writer do
 
   def io_list_element_size(_e), do: 1
 
-  def event_io_list(Event[symbol: :off, delta_time: delta_time, bytes: [status, note, vel]]) do
+  def event_io_list(%Event{symbol: :off, delta_time: delta_time, bytes: [status, note, vel]}) do
     chan = status &&& 0x0f
     running_status = Process.get(:status)
     running_chan = Process.get(:chan)
@@ -112,32 +112,32 @@ defmodule Midifile.Writer do
     [Varlen.write(delta_time), status, note, outvel]
   end
 
-  def event_io_list(Event[symbol: :on, delta_time: delta_time, bytes: [status, note, vel]]),                 do: [Varlen.write(delta_time), running_status(status), note, vel]
-  def event_io_list(Event[symbol: :poly_press, delta_time: delta_time, bytes: [status, note, amount]]),      do: [Varlen.write(delta_time), running_status(status), note, amount]
-  def event_io_list(Event[symbol: :controller, delta_time: delta_time, bytes: [status, controller, value]]), do: [Varlen.write(delta_time), running_status(status), controller, value]
-  def event_io_list(Event[symbol: :program, delta_time: delta_time, bytes: [status, program]]),              do: [Varlen.write(delta_time), running_status(status), program]
-  def event_io_list(Event[symbol: :chan_press, delta_time: delta_time, bytes: [status, amount]]),            do: [Varlen.write(delta_time), running_status(status), amount]
+  def event_io_list(%Event{symbol: :on, delta_time: delta_time, bytes: [status, note, vel]}),                 do: [Varlen.write(delta_time), running_status(status), note, vel]
+  def event_io_list(%Event{symbol: :poly_press, delta_time: delta_time, bytes: [status, note, amount]}),      do: [Varlen.write(delta_time), running_status(status), note, amount]
+  def event_io_list(%Event{symbol: :controller, delta_time: delta_time, bytes: [status, controller, value]}), do: [Varlen.write(delta_time), running_status(status), controller, value]
+  def event_io_list(%Event{symbol: :program, delta_time: delta_time, bytes: [status, program]}),              do: [Varlen.write(delta_time), running_status(status), program]
+  def event_io_list(%Event{symbol: :chan_press, delta_time: delta_time, bytes: [status, amount]}),            do: [Varlen.write(delta_time), running_status(status), amount]
 
-  def event_io_list(Event[symbol: :pitch_bend, delta_time: delta_time, bytes: [status, <<0::size(2), msb::size(7), lsb::size(7)>>]]) do
+  def event_io_list(%Event{symbol: :pitch_bend, delta_time: delta_time, bytes: [status, <<0::size(2), msb::size(7), lsb::size(7)>>]}) do
     [Varlen.write(delta_time), running_status(status), <<0::size(1), lsb::size(7), 0::size(1), msb::size(7)>>]
   end
 
-  def event_io_list(Event[symbol: :track_end, delta_time: delta_time, bytes: _]) do
+  def event_io_list(%Event{symbol: :track_end, delta_time: delta_time, bytes: _}) do
     Process.put(:status, @status_meta_event)
     [Varlen.write(delta_time), @status_meta_event, @meta_track_end, 0]
   end
 
-  def event_io_list(Event[symbol: :seq_num, delta_time: delta_time, bytes: data]),            do: meta_io_list(delta_time, @meta_seq_num, data)
-  def event_io_list(Event[symbol: :text, delta_time: delta_time, bytes: data]),               do: meta_io_list(delta_time, @meta_text, data)
-  def event_io_list(Event[symbol: :copyright, delta_time: delta_time, bytes: data]),          do: meta_io_list(delta_time, @meta_copyright, data)
-  def event_io_list(Event[symbol: :seq_name, delta_time: delta_time, bytes: data]),           do: meta_io_list(delta_time, @meta_seq_name, data)
-  def event_io_list(Event[symbol: :instrument, delta_time: delta_time, bytes: data]),         do: meta_io_list(delta_time, @meta_instrument, data)
-  def event_io_list(Event[symbol: :lyric, delta_time: delta_time, bytes: data]),              do: meta_io_list(delta_time, @meta_lyric, data)
-  def event_io_list(Event[symbol: :marker, delta_time: delta_time, bytes: data]),             do: meta_io_list(delta_time, @meta_marker, data)
-  def event_io_list(Event[symbol: :cue, delta_time: delta_time, bytes: data]),                do: meta_io_list(delta_time, @meta_cue, data)
-  def event_io_list(Event[symbol: :midi_chan_prefix, delta_time: delta_time, bytes: [data]]), do: meta_io_list(delta_time, @meta_midi_chan_prefix, data)
+  def event_io_list(%Event{symbol: :seq_num, delta_time: delta_time, bytes: data}),            do: meta_io_list(delta_time, @meta_seq_num, data)
+  def event_io_list(%Event{symbol: :text, delta_time: delta_time, bytes: data}),               do: meta_io_list(delta_time, @meta_text, data)
+  def event_io_list(%Event{symbol: :copyright, delta_time: delta_time, bytes: data}),          do: meta_io_list(delta_time, @meta_copyright, data)
+  def event_io_list(%Event{symbol: :seq_name, delta_time: delta_time, bytes: data}),           do: meta_io_list(delta_time, @meta_seq_name, data)
+  def event_io_list(%Event{symbol: :instrument, delta_time: delta_time, bytes: data}),         do: meta_io_list(delta_time, @meta_instrument, data)
+  def event_io_list(%Event{symbol: :lyric, delta_time: delta_time, bytes: data}),              do: meta_io_list(delta_time, @meta_lyric, data)
+  def event_io_list(%Event{symbol: :marker, delta_time: delta_time, bytes: data}),             do: meta_io_list(delta_time, @meta_marker, data)
+  def event_io_list(%Event{symbol: :cue, delta_time: delta_time, bytes: data}),                do: meta_io_list(delta_time, @meta_cue, data)
+  def event_io_list(%Event{symbol: :midi_chan_prefix, delta_time: delta_time, bytes: [data]}), do: meta_io_list(delta_time, @meta_midi_chan_prefix, data)
 
-  def event_io_list(Event[symbol: :tempo, delta_time: delta_time, bytes: [data]]) do
+  def event_io_list(%Event{symbol: :tempo, delta_time: delta_time, bytes: [data]}) do
     Process.put(:status, @status_meta_event)
     [Varlen.write(delta_time), @status_meta_event, @meta_set_tempo, Varlen.write(3),
      (data >>> 16) &&& 255,
@@ -145,11 +145,11 @@ defmodule Midifile.Writer do
       data         &&& 255]
   end
 
-  def event_io_list(Event[symbol: :smpte, delta_time: delta_time, bytes: [data]]),              do: meta_io_list(delta_time, @meta_smpte, data)
-  def event_io_list(Event[symbol: :time_signature, delta_time: delta_time, bytes: [data]]),     do: meta_io_list(delta_time, @meta_time_sig, data)
-  def event_io_list(Event[symbol: :key_signature, delta_time: delta_time, bytes: [data]]),      do: meta_io_list(delta_time, @meta_key_sig, data)
-  def event_io_list(Event[symbol: :sequencer_specific, delta_time: delta_time, bytes: [data]]), do: meta_io_list(delta_time, @meta_sequencer_specific, data)
-  def event_io_list(Event[symbol: :unknown_meta, delta_time: delta_time, bytes: [type, data]]), do: meta_io_list(delta_time, type, data)
+  def event_io_list(%Event{symbol: :smpte, delta_time: delta_time, bytes: [data]}),              do: meta_io_list(delta_time, @meta_smpte, data)
+  def event_io_list(%Event{symbol: :time_signature, delta_time: delta_time, bytes: [data]}),     do: meta_io_list(delta_time, @meta_time_sig, data)
+  def event_io_list(%Event{symbol: :key_signature, delta_time: delta_time, bytes: [data]}),      do: meta_io_list(delta_time, @meta_key_sig, data)
+  def event_io_list(%Event{symbol: :sequencer_specific, delta_time: delta_time, bytes: [data]}), do: meta_io_list(delta_time, @meta_sequencer_specific, data)
+  def event_io_list(%Event{symbol: :unknown_meta, delta_time: delta_time, bytes: [type, data]}), do: meta_io_list(delta_time, type, data)
 
   def meta_io_list(delta_time, type, data) when is_binary(data) do
     Process.put(:status, @status_meta_event)
