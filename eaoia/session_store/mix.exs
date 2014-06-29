@@ -3,8 +3,8 @@ defmodule SessionStore.Mixfile do
 
   def project do
     [ app: :session_store,
-      version: "0.0.1",
-      elixir: "~> 0.11.3-dev",
+      version: "0.0.2",
+      elixir: "~> 0.14.0",
       deps: deps ]
   end
 

@@ -1,3 +1,7 @@
+defmodule TcpRpc.State do
+  defstruct port: 0, lsock: nil, request_count: 0
+end
+
 defmodule TcpRpc do
 
   @moduledoc """
@@ -6,12 +10,10 @@ defmodule TcpRpc do
   that TCP stream.
   """
 
-  use GenServer.Behaviour
+  use Behaviour
 
   @server :tcp_rpc
   @default_port 1055
-
-  defrecord State, port: @default_port, lsock: nil, request_count: 0
 
   # ================ API ================
 
@@ -31,23 +33,15 @@ defmodule TcpRpc do
 
   def init(port) do
     {:ok, lsock} = :gen_tcp.listen(port, [active: true])
-    {:ok, State[port: port, lsock: lsock], 0}
+    {:ok, %TcpRpc.State{port: port, lsock: lsock}, 0}
   end
 
   def handle_call(:get_count, _from, state) do
     {:reply, state.request_count, state}
   end
 
-  def handle_call(request, from, config) do
-    super(request, from, config)
-  end
-
   def handle_cast(:stop, state) do
     {:stop, :normal, state}
-  end
-
-  def handle_cast(request, state) do
-    super(request, state)
   end
 
   def handle_info({:tcp, socket, raw_data}, state) do
@@ -58,10 +52,6 @@ defmodule TcpRpc do
   def handle_info(:timeout, state) do
     {:ok, _sock} = :gen_tcp.accept(state.lsock)
     {:noreply, state}
-  end
-
-  def handle_info(request, state) do
-    super(request, state)
   end
 
   # ================ Internals ================

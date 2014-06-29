@@ -3,8 +3,8 @@ defmodule TcpRpc.Mixfile do
 
   def project do
     [ app: :tcp_rpc,
-      version: "0.0.1",
-      elixir: "~> 0.10.4-dev",
+      version: "0.0.2",
+      elixir: "~> 0.14.0",
       deps: deps ]
   end
 

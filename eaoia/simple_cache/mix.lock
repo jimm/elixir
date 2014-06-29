@@ -1,4 +1,4 @@
-[ "amnesia": {:git, "git://github.com/meh/amnesia.git", "c5ab2244f8386c740cc2bf8b15d0518ba5312dba", [{:tag, "v0.1.1"}]},
-  "continuum": {:git, "git://github.com/meh/continuum.git", "c19240908b876667a07fd44c0cec7befed713e2e", []},
-  "datastructures": {:git, "git://github.com/meh/elixir-datastructures.git", "0b4c449f69f17c31d7bf280c910c774ed80802e1", []},
-  "exquisite": {:git, "git://github.com/meh/exquisite.git", "ed93abd4bb9cd33dec0343e4fef60726f5127c46", []} ]
+%{"amnesia": {:git, "git://github.com/meh/amnesia.git", "c5ab2244f8386c740cc2bf8b15d0518ba5312dba", [tag: "v0.1.1"]},
+  "continuum": {:git, "git://github.com/meh/continuum.git", "902d42857065570412c56ea312c198bf35b554ae", []},
+  "datastructures": {:git, "git://github.com/meh/elixir-datastructures.git", "28a7aee9addfe521ad0aa62f5e54f1ad597356cc", []},
+  "exquisite": {:git, "git://github.com/meh/exquisite.git", "d8d176743c7d7feb9faf47e03cb8046bbd72484c", []}}
