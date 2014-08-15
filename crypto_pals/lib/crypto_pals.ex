@@ -1,0 +1,2 @@
+defmodule CryptoPals do
+end
