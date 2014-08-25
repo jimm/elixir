@@ -3,6 +3,12 @@ defmodule CryptoPals.Hamming do
   use Bitwise
   require Integer
 
+  defmacro __using__(_opts) do
+    quote do
+      import unquote(__MODULE__), only: [hamming_distance: 2, count_one_bits: 1]
+    end
+  end
+
   @doc """
   Calculates the Hamming distance between two strings or char sets.
 

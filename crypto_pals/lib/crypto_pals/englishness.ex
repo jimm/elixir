@@ -1,5 +1,11 @@
 defmodule CryptoPals.Englishness do
 
+  defmacro __using__(_opts) do
+    quote do
+      import unquote(__MODULE__), only: [englishness: 1]
+    end
+  end
+
   @relative_freqs [
     {?e, 13}, {?t, 9}, {?a, 8}, {?o, 8}, {?i, 7}, {?n, 7},
     {?s,  6}, {?h, 6}, {?r, 6}, {?d, 4}, {?l, 4}, {?c, 3},

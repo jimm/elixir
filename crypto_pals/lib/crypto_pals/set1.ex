@@ -1,9 +1,9 @@
 defmodule CryptoPals.Set1 do
 
   use Bitwise
-  alias CryptoPals.Englishness, as: E
-  alias CryptoPals.Hamming, as: Ham
-  alias CryptoPals.Hex
+  use CryptoPals.Englishness
+  use CryptoPals.Hamming
+  use CryptoPals.Hex
   require Integer
 
   # ================ 1 ================
@@ -55,7 +55,7 @@ defmodule CryptoPals.Set1 do
   def single_byte_xor_cipher(s) do
     (0..255)
       |> Enum.map(&(single_byte_xor_cipher(s, &1)))
-      |> Enum.max_by(&E.englishness/1)
+      |> Enum.max_by(&englishness/1)
   end
 
   # Apply byte as XOR key to hex encoded string s and return string.
@@ -65,7 +65,7 @@ defmodule CryptoPals.Set1 do
       |> byte_duped_for_xor(num_bytes)
       |> fixed_xor(s)
       |> even_len_hex_str
-      |> Hex.hex_to_bytes
+      |> hex_to_bytes
   end
 
   @doc """
@@ -148,7 +148,7 @@ defmodule CryptoPals.Set1 do
   def find_xored_in_file(path) do
     File.stream!(path)
       |> Stream.map(&best_xored/1)
-      |> Enum.max_by(&E.englishness/1)
+      |> Enum.max_by(&englishness/1)
       |> String.rstrip
   end
 
@@ -214,7 +214,7 @@ defmodule CryptoPals.Set1 do
 
     to_string(data)
       |> repeating_key_xor(key)
-      |> Hex.hex_to_bytes
+      |> hex_to_bytes
   end
 
   @doc """
@@ -233,7 +233,7 @@ defmodule CryptoPals.Set1 do
     (0..255)
       |> Enum.reduce({0, 0, ""}, fn(byte, {_, e_englishness, _} = acc) ->
                                 xored = s |> Enum.map(fn(c) -> c ^^^ byte end)
-                                e = E.englishness(to_string(xored))
+                                e = englishness(to_string(xored))
                                 if e > e_englishness do
                                   {byte, e, to_string(xored)}
                                 else
@@ -251,7 +251,7 @@ defmodule CryptoPals.Set1 do
     (2..40)
       |> Enum.map(&(num_blocks_of_size(data, &1, 2)))
       |> Enum.min_by(fn([block0, block1]) ->
-                       div(Ham.hamming_distance(block0, block1), length(block0))
+                       div(hamming_distance(block0, block1), length(block0))
                      end)
       |> hd
       |> length
