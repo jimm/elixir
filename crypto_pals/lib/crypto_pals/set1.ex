@@ -260,8 +260,8 @@ defmodule CryptoPals.Set1 do
 
   # ================ 7 ================
 
-  # def aes_in_ecb_mode(data, key, mode) do
-  #   c = 
+  # def aes_in_ecb_mode(data, key, :encrypt) do
+  #   :crypto.block_encrypt(:aes_ecb, key, random_iv(), data)
   # end
 
   # ================ helpers ================
