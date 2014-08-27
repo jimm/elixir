@@ -15,10 +15,11 @@ defmodule CryptoPals.Englishness do
   ]
 
   @doc """
-  Calculate a number that determines how likely that the given string is
-  english text. Higher numbers are better. Letters get two points plus a
-  bonus for how popular they are ("etaion shrdlu"); whitespace, punctuation,
-  and numbers get one.
+  Calculate a number that determines how likely that the given bytes are
+  English text. Higher numbers are better. Letters get two points plus a
+  bonus for how popular they are ("etaion shrdlu"). Whitespace, punctuation,
+  and numbers get one point. The value is then normalized by the length of
+  the bytes.
 
   ## Examples
 
@@ -33,26 +34,25 @@ defmodule CryptoPals.Englishness do
       iex> CryptoPals.Englishness.englishness("Level 42")
       48/8
       iex> CryptoPals.Englishness.englishness("thê")
-      18/3
-
+      17/3
   """
   def englishness(s), do: englishness(s, {String.length(s), 0})
 
   defp englishness(<<>>, {slen, sum}), do: sum / slen
-  defp englishness(<<c :: utf8, t :: binary>>, {slen, sum}) when c in ?a .. ?z do
+  defp englishness(<<c :: utf8>> <> t, {slen, sum}) when c in ?a .. ?z do
     englishness(t, {slen, sum + 2 + freq_bonus(c)})
   end
-  defp englishness(<<c :: utf8, t :: binary>>, {slen, sum}) when c in ?A .. ?Z do
+  defp englishness(<<c :: utf8>> <> t, {slen, sum}) when c in ?A .. ?Z do
     englishness(t, {slen, sum + 2 + freq_bonus(c - ?A + ?a)})
   end
-  defp englishness(<<c :: utf8, t :: binary>>, {slen, sum})
+  defp englishness(<<c :: utf8>> <> t, {slen, sum})
     when c == ?\s or
       c in ?0 .. ?9 or
       c in [?., ?,, ?!, ??, ?;, ?;, ?(, ?)] \
   do
     englishness(t, {slen, sum + 1})
   end
-  defp englishness(<<_ :: utf8, t :: binary>>, {slen, sum}), do: englishness(t, {slen, sum-1})
+  defp englishness(<<_>> <> t, {slen, sum}), do: englishness(t, {slen, sum-1})
 
   defp freq_bonus(c) do
     {_, freq} = List.keyfind(@relative_freqs, c, 0, 0)
