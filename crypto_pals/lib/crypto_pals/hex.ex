@@ -1,5 +1,11 @@
 defmodule CryptoPals.Hex do
 
+  defmacro __using__(_opts) do
+    quote do
+      import unquote(__MODULE__)
+    end
+  end
+
   @doc """
   Converts a hex encoded byte string into a base64 string.
 
@@ -21,16 +27,16 @@ defmodule CryptoPals.Hex do
   ## Examples
 
       iex> CryptoPals.Set1.hex_to_bytes("deadbeef")
-      "Þ­¾ï"
+      <<0xde, 0xad, 0xbe, 0xef>>
   """
   def hex_to_bytes(s), do: hex_to_bytes(s, [])
 
-  defp hex_to_bytes("", out) do
+  defp hex_to_bytes(<<>>, out) do
     out |> Enum.reverse |> to_string
   end
 
   defp hex_to_bytes(<<b0, b1>> <> rest, out) do
-    n = [b0, b1] |> to_string |> String.to_integer(16)
+    n = String.to_integer(<<b0, b1>>, 16)
     hex_to_bytes(rest, [n | out])
   end
 end       

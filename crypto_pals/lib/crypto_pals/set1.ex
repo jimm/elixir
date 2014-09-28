@@ -1,9 +1,9 @@
 defmodule CryptoPals.Set1 do
 
   use Bitwise
-  alias CryptoPals.Englishness, as: E
-  alias CryptoPals.Hamming, as: Ham
-  alias CryptoPals.Hex
+  use CryptoPals.Englishness
+  use CryptoPals.Hamming
+  use CryptoPals.Hex
   require Integer
 
   # ================ 1 ================
@@ -12,37 +12,9 @@ defmodule CryptoPals.Set1 do
 
   # ================ 2 ================
 
-  @doc """
-  Takes two strings which are hex encoded byte strings and returns the XOR
-  of the two numbers as an integer.
-
-  ## Examples
-
-  The example output here shows hex values, but the values printed in IEx
-  will be decimal.
-
-      iex> CryptoPals.Set1.fixed_xor("0123", "0101")
-      0x0022
-      iex> CryptoPals.Set1.fixed_xor("1c0111001f010100061a024b53535009181c",
-      ...>                           "686974207468652062756c6c277320657965")
-      0x746865206b696420646f6e277420706c6179
-  """
-  def fixed_xor(s0, s1) do
-    n0 = String.to_integer(s0, 16)
-    n1 = String.to_integer(s1, 16)
-    n0 ^^^ n1
-  end
+  # Use :crypto.exor(iodata(), iodata())
 
   # ================ 3 ================
-
-  @doc """
-  Finds best (most "English") match for hard-coded string that has been
-  XOR-ed with a mystery byte.
-  """
-  def single_byte_xor_cipher do
-    s = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
-    single_byte_xor_cipher(s)
-  end
 
   @doc """
   Finds best (most "English") match for string s that has been XOR-ed with a
@@ -51,21 +23,19 @@ defmodule CryptoPals.Set1 do
   ## Examples
       iex> CryptoPals.Set1.single_byte_xor_cipher("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
       "Cooking MC's like a pound of bacon"
-  """ # ' <= work around Emacs font lock bug
+  """ # ' <= workaround for Emacs Elixir font lock bug
   def single_byte_xor_cipher(s) do
+    b = hex_to_bytes(s)
     (0..255)
-      |> Enum.map(&(single_byte_xor_cipher(s, &1)))
-      |> Enum.max_by(&E.englishness/1)
+      |> Enum.map(&(single_byte_xor_cipher(b, &1)))
+      |> Enum.max_by(&englishness/1)
   end
 
   # Apply byte as XOR key to hex encoded string s and return string.
   defp single_byte_xor_cipher(s, byte) do
-    num_bytes = div String.length(s), 2
     byte
-      |> byte_duped_for_xor(num_bytes)
-      |> fixed_xor(s)
-      |> even_len_hex_str
-      |> Hex.hex_to_bytes
+      |> byte_duped_for_xor(String.length(s))
+      |> :crypto.exor(s)
   end
 
   @doc """
@@ -74,14 +44,12 @@ defmodule CryptoPals.Set1 do
   ## Example
 
       iex> CryptoPals.Set1.byte_duped_for_xor(0, 3)
-      "000000"
+      <<0, 0, 0>>
       iex> CryptoPals.Set1.byte_duped_for_xor(0xfa, 3)
-      "FAFAFA"
+      <<0xFA, 0xFA, 0xFA>>
   """
   def byte_duped_for_xor(byte, num_bytes) do
-    byte
-      |> even_len_hex_str
-      |> String.duplicate(num_bytes)
+    :binary.copy(<<byte>>, num_bytes)
   end
 
   @doc """
@@ -148,7 +116,7 @@ defmodule CryptoPals.Set1 do
   def find_xored_in_file(path) do
     File.stream!(path)
       |> Stream.map(&best_xored/1)
-      |> Enum.max_by(&E.englishness/1)
+      |> Enum.max_by(&englishness/1)
       |> String.rstrip
   end
 
@@ -210,17 +178,16 @@ defmodule CryptoPals.Set1 do
                     cipher_byte
                   end)
     key = to_string(key_bytes)
-    IO.puts key                 # DEBUG
 
     to_string(data)
       |> repeating_key_xor(key)
-      |> Hex.hex_to_bytes
+      |> hex_to_bytes
   end
 
   @doc """
   Finds best (most "English") match for byte list that has been XOR-ed with
-  a mystery byte and returns a typle containing the byte and the best match
-  string.
+  a mystery byte and returns a tuple containing the byte, englishness
+  (fitness) value, and the best match string.
 
   ## Examples
       iex> CryptoPals.Set1.single_byte_xor_cipher_byte(
@@ -233,7 +200,7 @@ defmodule CryptoPals.Set1 do
     (0..255)
       |> Enum.reduce({0, 0, ""}, fn(byte, {_, e_englishness, _} = acc) ->
                                 xored = s |> Enum.map(fn(c) -> c ^^^ byte end)
-                                e = E.englishness(to_string(xored))
+                                e = englishness(to_string(xored))
                                 if e > e_englishness do
                                   {byte, e, to_string(xored)}
                                 else
@@ -251,7 +218,7 @@ defmodule CryptoPals.Set1 do
     (2..40)
       |> Enum.map(&(num_blocks_of_size(data, &1, 2)))
       |> Enum.min_by(fn([block0, block1]) ->
-                       div(Ham.hamming_distance(block0, block1), length(block0))
+                       div(hamming_distance(block0, block1), length(block0))
                      end)
       |> hd
       |> length
@@ -291,12 +258,25 @@ defmodule CryptoPals.Set1 do
       |> Enum.take(num_blocks)
   end
 
+  # ================ 7 ================
+
+  # def aes_in_ecb_mode(data, key, :encrypt) do
+  #   :crypto.block_encrypt(:aes_ecb, key, random_iv(), data)
+  # end
+
   # ================ helpers ================
 
-  # defp debug(val) do
+  # defp debug(val) when is_binary(val) do
   #   if String.printable?(val) do
-  #     IO.puts "#{val}"
+  #     IO.puts "** #{val} **"
+  #   else
+  #     IO.puts "** #{inspect(val)} **"
   #   end
+  #   val
+  # end
+
+  # defp debug(val) do
+  #   IO.puts "** #{inspect(val)} **"
   #   val
   # end
 
