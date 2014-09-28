@@ -24,6 +24,11 @@ defmodule CryptoPals.Hamming do
       |> Enum.sum
   end
 
+  # Note: as an optimization, we could create a lookup table in advance for
+  # all Unicode code points. As a more realistic optimization for this
+  # CryptoPals puzzle set, we could create a lookup table for all 256
+  # eight-bit values.
+
   def count_one_bits(n), do: count_one_bits(n, 0)
 
   defp count_one_bits(0, acc), do: acc
