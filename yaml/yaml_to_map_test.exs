@@ -8,7 +8,7 @@ defmodule YamlToMapTest do
   end
 
   test "get back a map with atomic keys" do
-    assert convert('a: b') == %{a: "b"}
+    assert convert('{a: b}') == %{a: "b"}
   end
 
   test "more than one key" do

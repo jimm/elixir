@@ -31,6 +31,6 @@ defmodule YamlToMap do
 
   defp _tuples_to_map([{key, val} | rest], map) do
     {:yamerl_str, :yamerl_node_str, _tag, _log, name} = key
-    _tuples_to_map(rest, Dict.put_new(map, list_to_atom(name), _to_map(val)))
+    _tuples_to_map(rest, Dict.put_new(map, String.to_atom(name), _to_map(val)))
   end
 end
