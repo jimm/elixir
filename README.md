@@ -34,3 +34,4 @@ A translation to Elixir of an exercise from _Erlang and OTP in Action_.
 ## YAML
 
 Converts the output of `:yamerl_constr` into a list of Elixir maps.
+See the [README](yaml/README.md).
