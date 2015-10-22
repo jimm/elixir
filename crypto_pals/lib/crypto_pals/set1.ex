@@ -27,16 +27,16 @@ defmodule CryptoPals.Set1 do
   def single_byte_xor_cipher(s) do
     b = hex_to_bytes(s)
     (0..255)
-      |> Enum.map(&(single_byte_xor_cipher(b, &1)))
-      |> Enum.max_by(&englishness/1)
+    |> Enum.map(&(single_byte_xor_cipher(b, &1)))
+    |> Enum.max_by(&englishness/1)
   end
 
   # Apply byte as XOR key to hex encoded string s and return string.
   defp single_byte_xor_cipher(s, byte) do
     byte
-      |> byte_duped_for_xor(byte_size(s))
-      |> :crypto.exor(s)
-  end
+    |> byte_duped_for_xor(byte_size(s))
+    |> :crypto.exor(s)
+end
 
   @doc """
   Returns a hex encoded byte string with byte repeated num_bytes times.
@@ -70,9 +70,7 @@ defmodule CryptoPals.Set1 do
       "DEADBEEF"
   """
   def even_len_hex_str(n) do
-    n
-      |> Integer.to_string(16)
-      |> leading_zero_if_odd_length
+    n |> Integer.to_string(16) |> leading_zero_if_odd_length
   end
     
   @doc """
@@ -115,15 +113,13 @@ defmodule CryptoPals.Set1 do
   """
   def find_xored_in_file(path) do
     File.stream!(path)
-      |> Stream.map(&best_xored/1)
-      |> Enum.max_by(&englishness/1)
-      |> String.rstrip
+    |> Stream.map(&best_xored/1)
+    |> Enum.max_by(&englishness/1)
+    |> String.rstrip
   end
 
   defp best_xored(line) do
-    line
-      |> String.rstrip
-      |> single_byte_xor_cipher
+    line |> String.rstrip |> single_byte_xor_cipher
   end
 
   # ================ 5 ================
@@ -139,15 +135,14 @@ defmodule CryptoPals.Set1 do
   def repeating_key_xor(plaintext, key) do
     key = String.duplicate(key, div(byte_size(plaintext), byte_size(key)) + 1)
     Stream.zip(String.to_char_list(plaintext), String.to_char_list(key))
-      |> Stream.map(fn({b0, b1}) -> byte_xor_16(b0, b1) end)
-      |> Enum.join
+    |> Stream.map(fn({b0, b1}) -> byte_xor_16(b0, b1) end)
+    |> Enum.join
   end
 
   # Takes two bytes, XORs them, and turns the result into a two-character
   # hex string.
   defp byte_xor_16(b0, b1) do
-      b0 ^^^ b1
-        |> even_len_hex_str
+      b0 ^^^ b1 |> even_len_hex_str
   end
 
   # ================ 6 ================
@@ -164,24 +159,26 @@ defmodule CryptoPals.Set1 do
 
   """
   def break_repeating_key_xor(path) do
-    data = File.read!(path)
+    data =
+      File.read!(path)
       |> String.replace("\n", "")
       |> Base.decode64!
       |> String.to_char_list
     keysize = likely_keysize(data)
     translated_blocks = data |> Enum.chunk(keysize) |> translate_blocks
-    key_bytes = translated_blocks
+    key_bytes =
+      translated_blocks
       |> Enum.map(&single_byte_xor_cipher_byte/1)
       |> Enum.map(fn({cipher_byte, _englishness, _s}) ->
-                    # IO.puts _englishness
-                    # IO.puts _s
-                    cipher_byte
-                  end)
+        # IO.puts _englishness
+        # IO.puts _s
+        cipher_byte
+      end)
     key = to_string(key_bytes)
 
     to_string(data)
-      |> repeating_key_xor(key)
-      |> hex_to_bytes
+    |> repeating_key_xor(key)
+    |> hex_to_bytes
   end
 
   @doc """
@@ -192,21 +189,21 @@ defmodule CryptoPals.Set1 do
   ## Examples
       iex> CryptoPals.Set1.single_byte_xor_cipher_byte(
       ...>   "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
-      ...>     |> CryptoPals.Hex.hex_to_bytes
-      ...>     |> String.to_char_list)
+      ...>   |> CryptoPals.Hex.hex_to_bytes
+      ...>   |> String.to_char_list)
       {88, 201/34, "Cooking MC's like a pound of bacon"}
-  """ # ' <= work around Emacs font lock bug
+  """
   def single_byte_xor_cipher_byte(s) do
     (0..255)
-      |> Enum.reduce({0, 0, ""}, fn(byte, {_, e_englishness, _} = acc) ->
-                                xored = s |> Enum.map(fn(c) -> c ^^^ byte end)
-                                e = englishness(to_string(xored))
-                                if e > e_englishness do
-                                  {byte, e, to_string(xored)}
-                                else
-                                  acc
-                                end
-                     end)
+    |> Enum.reduce({0, 0, ""}, fn(byte, {_, e_englishness, _} = acc) ->
+      xored = s |> Enum.map(fn(c) -> c ^^^ byte end)
+    e = englishness(to_string(xored))
+      if e > e_englishness do
+        {byte, e, to_string(xored)}
+      else
+        acc
+      end
+    end)
   end
 
   @doc """
@@ -216,12 +213,12 @@ defmodule CryptoPals.Set1 do
   """
   def likely_keysize(data) do
     (2..40)
-      |> Enum.map(&(num_blocks_of_size(data, &1, 2)))
-      |> Enum.min_by(fn([block0, block1]) ->
-                       div(hamming_distance(block0, block1), length(block0))
-                     end)
-      |> hd
-      |> length
+    |> Enum.map(&(num_blocks_of_size(data, &1, 2)))
+    |> Enum.min_by(fn([block0, block1]) ->
+      div(hamming_distance(block0, block1), length(block0))
+    end)
+    |> hd
+    |> length
   end
 
   @doc """
@@ -254,8 +251,8 @@ defmodule CryptoPals.Set1 do
   """
   def num_blocks_of_size(data, size, num_blocks) do
     data
-      |> Enum.chunk(size)
-      |> Enum.take(num_blocks)
+    |> Enum.chunk(size)
+    |> Enum.take(num_blocks)
   end
 
   # ================ 7 ================

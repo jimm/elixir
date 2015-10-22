@@ -31,11 +31,12 @@ defmodule MariaexTest do
       else
         # Row data comes back as tuples. Turn it into a map with column
         # names as keys.
-        foo = result.rows
-        |> Enum.map(fn(row) ->
-          Enum.zip(result.columns, Tuple.to_list(row))
-          |> Enum.into(%{})
-        end)
+        foo =
+          result.rows
+          |> Enum.map(fn(row) ->
+            Enum.zip(result.columns, Tuple.to_list(row))
+            |> Enum.into(%{})
+          end)
         foo
       end
     else

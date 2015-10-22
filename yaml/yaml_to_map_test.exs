@@ -29,8 +29,7 @@ defmodule YamlToMapTest do
   end
 
   defp convert(s) do
-    yaml_doclist = s
-      |> :yamerl_constr.string(detailed_constr: true)
+    yaml_doclist = s |> :yamerl_constr.string(detailed_constr: true)
     docs = YamlToMap.to_maps(yaml_doclist)
     if docs == [], do: nil, else: hd(docs)
   end

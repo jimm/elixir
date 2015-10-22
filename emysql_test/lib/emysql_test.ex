@@ -10,8 +10,8 @@ defmodule EmysqlTest do
   """
   def run(opts \\ []) do
     opts = [database: 'test']
-      |> Keyword.merge opts
-      |> Enum.map fn({k,v}) -> {k, bin_to_ch(v)} end
+    |> Keyword.merge opts
+    |> Enum.map fn({k,v}) -> {k, bin_to_ch(v)} end
     :emysql.add_pool(:test_pool, opts)
     create_test_table()
     create_test_data()
@@ -31,8 +31,8 @@ defmodule EmysqlTest do
   # Execute SQL and return the results as a list of maps.
   defp execute(conn, sql) do
     :emysql.execute(conn, sql)
-      |> :emysql.as_proplist
-      |> Enum.map(&(Enum.into(&1, %{})))
+    |> :emysql.as_proplist
+    |> Enum.map(&(Enum.into(&1, %{})))
   end
 
   # Convert string to char list.

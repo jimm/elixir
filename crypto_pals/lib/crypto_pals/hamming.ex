@@ -25,9 +25,9 @@ defmodule CryptoPals.Hamming do
 
   def hamming_distance(s0, s1) when is_list(s0) and is_list(s1) do
     Enum.zip(s0, s1)
-      |> Enum.map(fn({c0, c1}) -> c0 ^^^ c1 end)
-      |> Enum.map(&count_one_bits/1)
-      |> Enum.sum
+    |> Enum.map(fn({c0, c1}) -> c0 ^^^ c1 end)
+    |> Enum.map(&count_one_bits/1)
+    |> Enum.sum
   end
 
   # Note: as an optimization, we could create a lookup table in advance for
