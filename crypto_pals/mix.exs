@@ -4,7 +4,7 @@ defmodule CryptoPals.Mixfile do
   def project do
     [app: :crypto_pals,
      version: "0.0.1",
-     elixir: "~> 0.15.1",
+     elixir: "~> 1.1.1",
      deps: deps]
   end
 

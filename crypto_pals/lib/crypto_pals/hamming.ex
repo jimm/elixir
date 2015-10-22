@@ -38,7 +38,7 @@ defmodule CryptoPals.Hamming do
   def count_one_bits(n), do: count_one_bits(n, 0)
 
   defp count_one_bits(0, acc), do: acc
-  defp count_one_bits(n, acc) when Integer.odd?(n), do: count_one_bits(n >>> 1, acc+1)
-  defp count_one_bits(n, acc)                     , do: count_one_bits(n >>> 1, acc)
+  defp count_one_bits(n, acc) when Integer.is_odd(n), do: count_one_bits(n >>> 1, acc+1)
+  defp count_one_bits(n, acc)                       , do: count_one_bits(n >>> 1, acc)
 
 end

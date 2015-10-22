@@ -23,7 +23,7 @@ defmodule CryptoPals.Set1 do
   ## Examples
       iex> CryptoPals.Set1.single_byte_xor_cipher("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
       "Cooking MC's like a pound of bacon"
-  """ # ' <= workaround for Emacs Elixir font lock bug
+  """
   def single_byte_xor_cipher(s) do
     b = hex_to_bytes(s)
     (0..255)
@@ -34,7 +34,7 @@ defmodule CryptoPals.Set1 do
   # Apply byte as XOR key to hex encoded string s and return string.
   defp single_byte_xor_cipher(s, byte) do
     byte
-      |> byte_duped_for_xor(String.length(s))
+      |> byte_duped_for_xor(byte_size(s))
       |> :crypto.exor(s)
   end
 
@@ -92,7 +92,7 @@ defmodule CryptoPals.Set1 do
       "abcd"
   """
   def leading_zero_if_odd_length(s) do
-    if Integer.even?(String.length(s)) do
+    if Integer.is_even(String.length(s)) do
       s
     else
       "0#{s}"
@@ -109,8 +109,8 @@ defmodule CryptoPals.Set1 do
       Commented out, because this takes around 10 seconds to run. It works,
       though.
 
-      # iex> CryptoPals.Set1.find_xored_in_file("data/4.txt")
-      # "Now that the party is jumping"
+      iex> CryptoPals.Set1.find_xored_in_file("data/4.txt")
+      "Now that the party is jumping"
 
   """
   def find_xored_in_file(path) do
@@ -137,7 +137,7 @@ defmodule CryptoPals.Set1 do
       "0B3637272A2B2E63622C2E69692A23693A2A3C6324202D623D63343C2A26226324272765272A282B2F20430A652E2C652A3124333A653E2B2027630C692B20283165286326302E27282F"
   """
   def repeating_key_xor(plaintext, key) do
-    key = String.duplicate(key, div(String.length(plaintext), String.length(key)) + 1)
+    key = String.duplicate(key, div(byte_size(plaintext), byte_size(key)) + 1)
     Stream.zip(String.to_char_list(plaintext), String.to_char_list(key))
       |> Stream.map(fn({b0, b1}) -> byte_xor_16(b0, b1) end)
       |> Enum.join
@@ -173,8 +173,8 @@ defmodule CryptoPals.Set1 do
     key_bytes = translated_blocks
       |> Enum.map(&single_byte_xor_cipher_byte/1)
       |> Enum.map(fn({cipher_byte, _englishness, _s}) ->
-                    IO.puts _englishness
-                    IO.puts _s
+                    # IO.puts _englishness
+                    # IO.puts _s
                     cipher_byte
                   end)
     key = to_string(key_bytes)
