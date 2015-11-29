@@ -91,7 +91,7 @@ defmodule Midifile.Writer do
     List.foldl(List.flatten(l), acc, fn(e, acc) -> acc + io_list_element_size(e) end)
   end
 
-  def io_list_element_size(e) when is_binary(e), do: size(e)
+  def io_list_element_size(e) when is_binary(e), do: byte_size(e)
 
   def io_list_element_size(_e), do: 1
 
@@ -153,7 +153,7 @@ defmodule Midifile.Writer do
 
   def meta_io_list(delta_time, type, data) when is_binary(data) do
     Process.put(:status, @status_meta_event)
-    [Varlen.write(delta_time), @status_meta_event, type, Varlen.write(size(data)), data]
+    [Varlen.write(delta_time), @status_meta_event, type, Varlen.write(byte_size(data)), data]
   end
 
   def meta_io_list(delta_time, type, data) do

@@ -83,7 +83,7 @@ defmodule Midifile.Reader do
   # Look for Cookie in file and return file position after Cookie.
   defp look_for_chunk(_f, pos, cookie, {:ok, cookie}) do
     debug("look_for_chunk")
-    pos + size(cookie)
+    pos + byte_size(cookie)
   end
 
   defp look_for_chunk(f, pos, cookie, {:ok, _}) do
@@ -91,7 +91,7 @@ defmodule Midifile.Reader do
     # This isn't efficient, because we only advance one character at a time.
     # We should really look for the first char in Cookie and, if found,
     # advance that far.
-    look_for_chunk(f, pos + 1, cookie, :file.pread(f, pos + 1, size(cookie)))
+    look_for_chunk(f, pos + 1, cookie, :file.pread(f, pos + 1, byte_size(cookie)))
   end
 
   defp parse_header({:ok, <<_bytes_to_read::size(32), format::size(16), num_tracks::size(16), division::size(16)>>}) do
@@ -260,9 +260,9 @@ defmodule Midifile.Reader do
       @meta_sequencer_specific ->
         debug("@meta_sequencer_specific")
         [%Event{symbol: :seq_name, delta_time: delta_time, bytes: [data]}, total_length]
-      _UNKNOWN ->
+      unknown ->
         debug("unknown meta")
-        IO.puts "unknown == #{_UNKNOWN}" # DEBUG
+        IO.puts "unknown == #{unknown}" # DEBUG
         [%Event{symbol: :unknown_meta, delta_time: delta_time, bytes: [type, data]}, total_length]
     end
   end
