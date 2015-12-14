@@ -34,7 +34,7 @@ class Table
     end
   end
 
-  %w(string datetime boolean float).each do |type|
+  %w(string datetime boolean float decimal).each do |type|
     define_method(type) do |name, _opts=nil|
       @fields << "#{name}:#{type}" unless name =~ /^(created|updated)_at$/
     end

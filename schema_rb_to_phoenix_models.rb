@@ -55,7 +55,7 @@ class Table
     end
   end
 
-  %w(string datetime date time uuid boolean float).each do |type|
+  %w(string datetime date time uuid boolean float decimal).each do |type|
     define_method(type) do |name, options={}|
       db_type = case type.to_s
                 when 'datetime'
