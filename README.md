@@ -1,19 +1,22 @@
 # Jim's Elixir Experiments
 
-This repo contains my experiments with Elixir.
+This repo contains my experiments with Elixir. See also my other repos:
+
+- https://github.com/jimm/csvlixir
+- https://github.com/jimm/elixir-midifile
+- https://github.com/jimm/erlang-midilib
+- https://github.com/jimm/elixir_resource_discovery
 
 ## CryptoPals
 
 http://cryptopals.com/, though I'm also working on those in Clojure.
 
-## CSV
+## Core MIDI
 
-This grew into https://github.com/jimm/csvlixir which is now a Hex/Expm
-package.
+A MIDI file reader/writer. See https://github.com/jimm/elixir-midifile
 
-## Midifile
-
-A MIDI file reader/writer.
+This is an example Elixir wrapper around Apple CoreMIDI functions. The code
+in `c_src` is a modification of code posted by Joe Armstrong years ago.
 
 ## Rails to Phoenix
 
