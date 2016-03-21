@@ -19,7 +19,7 @@ A MIDI file reader/writer.
 
 A few scripts in this directory are attempts to automate conversion of Ruby
 on Rails models to Phoenix models. The best one so far is
-[file:schema_rb_to_phoenix_models.rb].
+[schema_rb_to_phoenix_models.rb](file:schema_rb_to_phoenix_models.rb).
 
 ## Replayer
 
