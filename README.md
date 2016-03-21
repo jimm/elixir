@@ -8,15 +8,18 @@ http://cryptopals.com/, though I'm also working on those in Clojure.
 
 ## CSV
 
-Note: This grew into https://github.com/jimm/csvlixir which is now a
-Hex/Expm package.
-
-A CSV reader/writer for Elixir. Operates on strings and char lists. It'd be
-very simple to provide file I/O.
+This grew into https://github.com/jimm/csvlixir which is now a Hex/Expm
+package.
 
 ## Midifile
 
 A MIDI file reader/writer.
+
+## Rails to Phoenix
+
+A few scripts in this directory are attempts to automate conversion of Ruby
+on Rails models to Phoenix models. The best one so far is
+[file:schema_rb_to_phoenix_models.rb].
 
 ## Replayer
 
