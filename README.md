@@ -22,7 +22,7 @@ in `c_src` is a modification of code posted by Joe Armstrong years ago.
 
 A few scripts in this directory are attempts to automate conversion of Ruby
 on Rails models to Phoenix models. The best one so far is
-[schema_rb_to_phoenix_models.rb](file:schema_rb_to_phoenix_models.rb).
+[schema_rb_to_phoenix_models.rb](schema_rb_to_phoenix_models.rb).
 
 ## Replayer
 
