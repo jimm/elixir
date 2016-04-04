@@ -9,13 +9,16 @@ int read_cmd(byte *buf);
 int write_cmd(byte *buf, int len);
 
 int main() {
-  int fn, arg1, arg2, result;
-  byte buf[100];
+  byte fn, buf[100];
+  MIDIObjectRef obj;
+  MIDIEndpointRef endpoint;
+  CFStringRef cfstr;
 
   while (read_cmd(buf) > 0) {
-    fn = buf[0];
-    
-    switch (fn) {
+    switch (buf[0]) {
+
+    /* ================ Clients ================ */
+
     /* Creates a MIDIClient object. */
     case FUNC_MIDIClientCreate:
       break;
@@ -23,6 +26,8 @@ int main() {
     /* Disposes a MIDIClient object. */
     case FUNC_MIDIClientDispose:
       break;
+
+    /* ================ Ports ================ */
 
     /* Creates an input port through which the client may receive incoming MIDI messages from any MIDI source. */
     case FUNC_MIDIInputPortCreate:
@@ -44,9 +49,12 @@ int main() {
     case FUNC_MIDIPortDisconnectSource:
       break;
 
+    /* ================ Devices ================ */
+
     /* Returns the number of devices in the system. */
     case FUNC_MIDIGetNumberOfDevices:
-      result = MIDIGetNumberOfDevices();
+      buf[0] = MIDIGetNumberOfDevices();
+      write_cmd(buf, 1);
       break;
 
     /* Returns one of the devices in the system. */
@@ -60,6 +68,8 @@ int main() {
     /* Returns one of a given device's entities. */
     case FUNC_MIDIDeviceGetEntity:
       break;
+
+    /* ================ Entities ================ */
 
     /* Returns the number of sources in a given entity. */
     case FUNC_MIDIEntityGetNumberOfSources:
@@ -81,9 +91,12 @@ int main() {
     case FUNC_MIDIEntityGetDevice:
       break;
 
+    /* ================ Endpoints ================ */
+
     /* Returns the number of sources in the system. */
     case FUNC_MIDIGetNumberOfSources:
-      result = MIDIGetNumberOfSources();
+      buf[0] = MIDIGetNumberOfSources();
+      write_cmd(buf, 1);
       break;
 
     /* Returns one of the sources in the system. */
@@ -92,7 +105,8 @@ int main() {
 
     /* Returns the number of destinations in the system. */
     case FUNC_MIDIGetNumberOfDestinations:
-      result = MIDIGetNumberOfDestinations();
+      buf[0] = MIDIGetNumberOfDestinations();
+      write_cmd(buf, 1);
       break;
 
     /* Returns one of the destinations in the system. */
@@ -115,17 +129,26 @@ int main() {
     case FUNC_MIDIEndpointDispose:
       break;
 
+    /* ================ External Devices ================ */
+
     /* Returns the number of external MIDI devices in the system. */
     case FUNC_MIDIGetNumberOfExternalDevices:
-      result = MIDIGetNumberOfExternalDevices();
+      buf[0] = MIDIGetNumberOfExternalDevices();
+      write_cmd(buf, 1);
       break;
 
     /* Returns one of the external devices in the system. */
     case FUNC_MIDIGetExternalDevice:
       break;
 
+    /* ================ Objects and Properties ================ */
+
     /* Gets an object's integer-type property. */
     case FUNC_MIDIObjectGetIntegerProperty:
+      obj = *(&buf[1]);
+      cfstr = *(&buf[5]);
+      buf[0] = MIDIObjectGetIntegerProperty(obj, cfstr, (SInt32 *)&buf[1]);
+      write_cmd(buf, 1 + sizeof(SInt32));
       break;
 
     /* Sets an object's integer-type property. */
@@ -168,6 +191,8 @@ int main() {
     case FUNC_MIDIObjectFindByUniqueID:
       break;
 
+    /* ================ MIDI I/O ================ */
+
     /* Sends MIDI to a destination. */
     case FUNC_MIDISend:
       break;
@@ -186,7 +211,11 @@ int main() {
 
     /* Stops and restarts MIDI I/O. */
     case FUNC_MIDIRestart:
+      buf[0] = MIDIRestart();
+      write_cmd(buf, 1);
       break;
+
+    /* ================ Packet Lists ================ */
 
     /* Advances a MIDIPacket pointer to the MIDIPacket which immediately follows it in memory if it is part of a MIDIPacketList. */
     case FUNC_MIDIPacketNext:
@@ -200,7 +229,5 @@ int main() {
     case FUNC_MIDIPacketListAdd:
       break;
     }
-    buf[0] = result;
-    write_cmd(buf, 1);
   }
 }
