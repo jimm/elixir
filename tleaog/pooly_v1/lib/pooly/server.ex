@@ -23,8 +23,20 @@ defmodule Pooly.Server do
 
   # ================ Private Functions ================
 
-  defp supervvisor_spec(config) do
+  defp supervisor_spec(config) do
 	  opts = [restart: :temporary]
     supervisor(Pooly.WorkerSupervisor, [config], opts)
+  end
+
+  defp prepopulate(size, sup), do: prepopulate(size, sup, [])
+
+  defp prepopulate(size, _, workers) when size < 1, do: workers
+  defp prepopulate(size, sup, workers) do
+    prepopulate(size-1, sup, [new_worker(sup) | workers])
+  end
+
+  defp new_worker(sup) do
+	  {:ok, worker} = Supervisor.start_child(sup, [[]])
+    worker
   end
 end
