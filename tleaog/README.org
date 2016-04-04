@@ -1,0 +1,3 @@
+* Scratch Space
+
+My scratch space for exercises from /The Little Elixir & OTP Guidebook/.
