@@ -1,6 +1,6 @@
-defmodule PoolyV1Test do
+defmodule PoolyTest do
   use ExUnit.Case
-  doctest PoolyV1
+  doctest Pooly
 
   test "the truth" do
     assert 1 + 1 == 2

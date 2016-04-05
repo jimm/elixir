@@ -1,8 +1,8 @@
-defmodule PoolyV1.Mixfile do
+defmodule Pooly.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :pooly_v1,
+    [app: :pooly,
      version: "0.0.1",
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
@@ -14,7 +14,8 @@ defmodule PoolyV1.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger]]
+    [applications: [:logger],
+     mod: {Pooly, []}]
   end
 
   # Dependencies can be Hex packages:

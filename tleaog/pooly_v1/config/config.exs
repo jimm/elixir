@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure for your application as:
 #
-#     config :pooly_v1, key: :value
+#     config :pooly, key: :value
 #
 # And access this configuration in your application as:
 #
-#     Application.get_env(:pooly_v1, :key)
+#     Application.get_env(:pooly, :key)
 #
 # Or configure a 3rd-party app:
 #

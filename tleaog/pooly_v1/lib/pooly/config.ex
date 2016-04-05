@@ -1,3 +1,7 @@
 defmodule Pooly.Config do
-  defstruct mfa: {nil, nil, nil}, size: 5
+  @moduledoc """
+  Configuration struct for Pooly.
+  """
+
+  defstruct module: nil, function: nil, args: nil, size: 5
 end
