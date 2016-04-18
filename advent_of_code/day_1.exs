@@ -1,9 +1,7 @@
+#!/usr/bin/env elixir
+
 defmodule Day1 do
-
   @input_file "day_1.txt"
-
-  def move(c) when c == "(", do: 1
-  def move(c) when c == ")", do: -1
 
   def destination_floor do
     File.read!(@input_file)
@@ -14,7 +12,21 @@ defmodule Day1 do
   def first_basement_index do
     File.read!(@input_file)
     |> String.codepoints
+    |> first_negative_one(0, 0)
+  end
+
+  defp move(c) when c == "(", do: 1
+  defp move(c) when c == ")", do: -1
+
+  defp first_negative_one(_, -1, index), do: index
+  defp first_negative_one([], _, _), do: raise "not found"
+  defp first_negative_one([c|rest], floor, index) when c == "(" do
+    first_negative_one(rest, floor+1, index+1)
+  end
+  defp first_negative_one([c|rest], floor, index) do
+    first_negative_one(rest, floor-1, index+1)
   end
 end
 
 IO.inspect Day1.destination_floor
+IO.inspect Day1.first_basement_index
