@@ -7,54 +7,44 @@ defmodule Day7 do
 
   def run do
     File.stream!(@input_file)
-    |> Enum.map(&parse/1)
+    |> tokenize
     |> reorder
-    |> Enum.reduce(%{}, &execute/2)
-    |> Map.get("a")
+    |> execute
+    |> Map.get(:a)
+  end
+
+  # ================ tokenization ================
+
+  defp tokenize(statements) do
+    statements |> Enum.map(&tokenize_statement/1)
   end
 
   # Given "foo bar -> target" returns ["target", "foo", "bar"]
-  def parse(s) do
+  defp tokenize_statement(s) do
     [target | ["->" | rest]] = s |> String.split |> Enum.reverse
-    [target | Enum.reverse(rest)]
+    args = rest
+    |> Enum.reverse
+    |> Enum.map(fn
+      <<c>> <> _ = s when c >= ?0 and c <= ?9 -> String.to_integer(s)
+      s -> String.to_atom(s)
+    end)
+    [String.to_atom(target) | args]
   end
 
-  defp execute([target, "NOT", var], context) do
-   context |> Map.put(target, bnot(value_of(context, var)) &&& 0xffff)
-  end
-  defp execute([target, var1, "AND", var2], context) do
-    context |> Map.put(target, value_of(context, var1) &&& value_of(context, var2))
-  end
-  defp execute([target, var1, "OR", var2], context) do
-    context |> Map.put(target, bor(value_of(context, var1), value_of(context, var2)))
-  end
-  defp execute([target, var1, "LSHIFT", var2], context) do
-    context |> Map.put(target, bsl(value_of(context, var1), value_of(context, var2)) &&& 0xffff)
-  end
-  defp execute([target, var1, "RSHIFT", var2], context) do
-    context |> Map.put(target, bsr(value_of(context, var1), value_of(context, var2)))
-  end
-  defp execute([target, value], context) do
-    context |> Map.put(target, value_of(context, value))
-  end
-
-  # Appends "_" to non-numeric strings so we don't have to worry about
-  # reserved words.
-  defp value_of(_, <<c>> <> _ = s) when c >= ?0 and c <= ?9, do: String.to_integer(s)
-  defp value_of(context, var), do: Map.get(context, var)
+  # ================ statement reordering ================
 
   # Reorders a list of statement lists to eliminate dependencies. Each
   # statement list is of the form
   #
-  # - [value, "->", target]
-  # - [value, BINOP, value, "->" target]
-  # - [NOT, value, "->" target]
+  # - [target, value]                   (assignment)
+  # - [target, value, :BINOP, value]    (binary operation and assignment)
+  # - [target, :NOT, value]             (negation and assignment)
   defp reorder(statements) do
     dependencies = statements
     |> Enum.reduce(%{}, fn
       ([target, value], m) -> 
         m |> add_dependency(target, value)
-      ([target, "NOT", value], m) ->
+      ([target, :NOT, value], m) ->
         m |> add_dependency(target, value)
       ([target, value1, _, value2], m) ->
         m |> add_dependency(target, value1) |> add_dependency(target, value2)
@@ -64,15 +54,15 @@ defmodule Day7 do
   end
 
   defp add_dependency(m, target, value) do
-    if variable?(value) do
-      Map.put(m, target, [value | Map.get(m, target, [])])
-    else
+    if const?(value) do
       Map.put_new(m, target, [])
+    else
+      Map.put(m, target, [value | Map.get(m, target, [])])
     end
   end
 
-  defp variable?(<<c>> <> _) when c >= ?0 and c <= ?9, do: false
-  defp variable?(_), do: true
+  defp const?(i) when is_integer(i), do: true
+  defp const?(_), do: false
 
   defp reorder([], [], reordered), do: Enum.reverse(reordered)
   defp reorder(statements, dependencies, reordered) do
@@ -102,6 +92,36 @@ defmodule Day7 do
 
   defp delete_all(vs, []), do: vs
   defp delete_all(vs, [h|t]), do: delete_all(List.delete(vs, h), t)
+
+  # ================ execution ================
+
+  defp execute(statements) do
+    statements |> Enum.reduce(%{}, &execute/2)
+  end
+
+  defp execute([target, :NOT, var], memory) do
+   memory |> Map.put(target, bnot(value_of(memory, var)) &&& 0xffff)
+  end
+  defp execute([target, var1, :AND, var2], memory) do
+    memory |> Map.put(target, value_of(memory, var1) &&& value_of(memory, var2))
+  end
+  defp execute([target, var1, :OR, var2], memory) do
+    memory |> Map.put(target, bor(value_of(memory, var1), value_of(memory, var2)))
+  end
+  defp execute([target, var1, :LSHIFT, var2], memory) do
+    memory |> Map.put(target,
+                       bsl(value_of(memory, var1), value_of(memory, var2)) &&&
+                         0xffff)
+  end
+  defp execute([target, var1, :RSHIFT, var2], memory) do
+    memory |> Map.put(target, bsr(value_of(memory, var1), value_of(memory, var2)))
+  end
+  defp execute([target, value], memory) do
+    memory |> Map.put(target, value_of(memory, value))
+  end
+
+  defp value_of(_, i) when is_integer(i), do: i
+  defp value_of(memory, var), do: Map.get(memory, var)
 end
 
 IO.inspect Day7.run
