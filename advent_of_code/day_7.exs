@@ -13,6 +13,18 @@ defmodule Day7 do
     |> Map.get(:a)
   end
 
+  def run2 do
+    statements = File.stream!(@input_file)
+    |> tokenize
+    |> reorder
+
+    statements
+    |> Enum.concat([[:b, :a], [:a, 0]])
+    |> Enum.concat(tl(statements)) # strip first const assignment to b
+    |> execute
+    |> Map.get(:a)
+  end
+
   # ================ tokenization ================
 
   defp tokenize(statements) do
@@ -126,3 +138,6 @@ end
 
 IO.inspect Day7.run
 # => 46065
+
+IO.inspect Day7.run2
+# => 14134
