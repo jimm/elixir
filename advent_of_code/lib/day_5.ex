@@ -1,7 +1,5 @@
-#!/usr/bin/env elixir
-
 defmodule Day5 do
-  @input_file "day_5.txt"
+  @input_file "data/day_5.txt"
   @forbidden ~r{(ab)|(cd)|(pq)|(xy)}
   @doubled ~r{(.)\1}
   @three_vowels ~r{[aeiou].*[aeiou].*[aeiou]}
@@ -28,5 +26,5 @@ defmodule Day5 do
   end
 end
 
-IO.inspect Day5.count_nice(&Day5.nice1/1)
-IO.inspect Day5.count_nice(&Day5.nice2/1)
+# Day5.count_nice(&Day5.nice1/1)
+# Day5.count_nice(&Day5.nice2/1)

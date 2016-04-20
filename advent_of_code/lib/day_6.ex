@@ -1,11 +1,5 @@
-#!/usr/bin/env elixir
-
-# 376893 is too low
-# 377891 is answer?
-# 742498 is too high
-
 defmodule Day6 do
-  @input_file "day_6.txt"
+  @input_file "data/day_6.txt"
   @line_nums ~r{(turn on|turn off|toggle) (\d+),(\d+) through (\d+),(\d+)}
   @num_rows 1000
   @row_len 1000
@@ -63,8 +57,8 @@ defmodule Day6 do
   end
 end
 
-# IO.inspect Day6.count_lights
+# Day6.count_lights
 # => 377891
 
-IO.inspect Day6.total_brightness
-# => 14110788
+# Day6.total_brightness
+# # => 14110788

@@ -1,7 +1,5 @@
-#!/usr/bin/env elixir
-
-defmodule Day2 do
-  @input_file "day_3.txt"
+defmodule Day3 do
+  @input_file "data/day_3.txt"
 
   require Integer
 
@@ -46,5 +44,5 @@ defmodule Day2 do
   defp move({x, y}, c) when c == "<", do: {x-1, y}
 end
 
-IO.inspect Day2.received_present_count
-IO.inspect Day2.santa_plus_robo_present_count
+# Day3.received_present_count
+# Day3.santa_plus_robo_present_count

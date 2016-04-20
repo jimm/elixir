@@ -1,7 +1,5 @@
-#!/usr/bin/env elixir
-
 defmodule Day7 do
-  @input_file "day_7.txt"
+  @input_file "data/day_7.txt"
 
   use Bitwise
 
@@ -136,8 +134,8 @@ defmodule Day7 do
   defp value_of(memory, var), do: Map.get(memory, var)
 end
 
-IO.inspect Day7.run
-# => 46065
+# Day7.run
+# # => 46065
 
-IO.inspect Day7.run2
-# => 14134
+# Day7.run2
+# # => 14134

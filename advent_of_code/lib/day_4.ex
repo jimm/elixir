@@ -1,5 +1,3 @@
-#!/usr/bin/env elixir
-
 defmodule Day4 do
   @key "iwrupvqb"
 
@@ -24,4 +22,4 @@ defmodule Day4 do
   defp bad_hash(bin), do: !good_hash(bin)
 end
 
-IO.inspect Day4.mine_coin
+# Day4.mine_coin

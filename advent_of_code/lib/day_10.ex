@@ -1,5 +1,3 @@
-#!/usr/bin/env elixir
-
 defmodule Day10 do
   @start "1113222113"
 
@@ -28,8 +26,8 @@ defmodule Day10 do
   defp add_encoded(answer, n, c), do: "#{answer}#{n}#{<<c>>}"
 end
 
-IO.inspect Day10.look_and_say(40)
-# => 252594
+# Day10.look_and_say(40)
+# # => 252594
 
-IO.inspect Day10.look_and_say(50)
-# => 3579328
+# Day10.look_and_say(50)
+# # => 3579328

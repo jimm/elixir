@@ -1,5 +1,3 @@
-#!/usr/bin/env elixir
-
 defmodule Day11 do
   @start "hepxcrrq"
   @illegal_chars_regex ~r/[iol]/
@@ -65,8 +63,8 @@ defmodule Day11 do
   end
 end
 
-IO.inspect Day11.next_good_password
-# => hepxxyzz
+# Day11.next_good_password
+# # => hepxxyzz
 
-IO.inspect Day11.next_good_password(2)
-# => heqaabcc
+# Day11.next_good_password(2)
+# # => heqaabcc

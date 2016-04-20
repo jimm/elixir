@@ -1,7 +1,5 @@
-#!/usr/bin/env elixir
-
 defmodule Day9 do
-  @input_file "day_9.txt"
+  @input_file "data/day_9.txt"
 
   def shortest, do: run(&Enum.min/1)
 
@@ -48,8 +46,8 @@ defmodule Day9 do
   end
 end
 
-IO.inspect Day9.shortest
-# => 251
+# Day9.shortest
+# # => 251
 
-IO.inspect Day9.longest
-# => 898
+# Day9.longest
+# # => 898

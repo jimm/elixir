@@ -1,7 +1,5 @@
-#!/usr/bin/env elixir
-
 defmodule Day1 do
-  @input_file "day_1.txt"
+  @input_file "data/day_1.txt"
 
   def destination_floor do
     File.read!(@input_file)
@@ -28,5 +26,5 @@ defmodule Day1 do
   end
 end
 
-IO.inspect Day1.destination_floor
-IO.inspect Day1.first_basement_index
+# Day1.destination_floor
+# Day1.first_basement_index

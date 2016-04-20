@@ -1,7 +1,5 @@
-#!/usr/bin/env elixir
-
 defmodule Day8 do
-  @input_file "day_8.txt"
+  @input_file "data/day_8.txt"
 
   def run1 do
     {code_rep_len, char_count} = File.stream!(@input_file)
@@ -38,8 +36,8 @@ defmodule Day8 do
   end
 end
 
-IO.inspect Day8.run1
-# => 1333
+# Day8.run1
+# # => 1333
 
-IO.inspect Day8.run2
-# => 2046
+# Day8.run2
+# # => 2046

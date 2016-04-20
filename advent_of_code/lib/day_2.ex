@@ -1,7 +1,5 @@
-#!/usr/bin/env elixir
-
 defmodule Day2 do
-  @input_file "day_2.txt"
+  @input_file "data/day_2.txt"
 
   def total_paper_area_needed do
     calculate_need(&paper_area_needed/1)
@@ -55,5 +53,5 @@ defmodule Day2 do
   defp cubic_volume(l, w, h), do: l * w * h
 end
 
-IO.inspect Day2.total_paper_area_needed
-IO.inspect Day2.total_ribbon_length_needed
+# Day2.total_paper_area_needed
+# Day2.total_ribbon_length_needed
