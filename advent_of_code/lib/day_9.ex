@@ -5,7 +5,7 @@ defmodule Day9 do
 
   def longest, do: run(&Enum.max/1)
 
-  def run(f) do
+  defp run(f) do
     distances = File.stream!(@input_file)
     |> Enum.reduce(%{}, fn line, acc ->
       [src, "to", dest, "=", num_str] = String.split(line)

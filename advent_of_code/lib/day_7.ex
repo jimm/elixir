@@ -3,22 +3,15 @@ defmodule Day7 do
 
   use Bitwise
 
-  def run do
+  def run, do: run(&(&1))
+
+  def run2, do: run(&reset_and_rerun/1)
+
+  defp run(modify) do
     File.stream!(@input_file)
     |> tokenize
     |> reorder
-    |> execute
-    |> Map.get(:a)
-  end
-
-  def run2 do
-    statements = File.stream!(@input_file)
-    |> tokenize
-    |> reorder
-
-    statements
-    |> Enum.concat([[:b, :a], [:a, 0]])
-    |> Enum.concat(tl(statements)) # strip first const assignment to b
+    |> modify.()
     |> execute
     |> Map.get(:a)
   end
@@ -102,6 +95,12 @@ defmodule Day7 do
 
   defp delete_all(vs, []), do: vs
   defp delete_all(vs, [h|t]), do: delete_all(List.delete(vs, h), t)
+
+  defp reset_and_rerun(statements) do
+    statements
+    |> Enum.concat([[:b, :a], [:a, 0]])
+    |> Enum.concat(tl(statements)) # strip first const assignment to b
+  end
 
   # ================ execution ================
 
