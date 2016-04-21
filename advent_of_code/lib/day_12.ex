@@ -10,10 +10,9 @@ defmodule Day12 do
   end
 
   def non_red_sum do
-    s = File.read!(@input_file)
-    total = s |> collect_numbers |> Enum.sum
-    reds = s |> collect_red_numbers |> Enum.sum
-    total - reds
+    File.read!(@input_file)
+    |> collect_non_red_numbers
+    |> Enum.sum
   end
 
   defp collect_numbers(s) do
@@ -21,26 +20,28 @@ defmodule Day12 do
     |> Enum.map(fn [_, num] -> String.to_integer(num) end)
   end
 
-  defp collect_red_numbers(s) do
-    {:ok, json} = Poison.decode(s)
-    json
-    |> red_numbers
+  defp collect_non_red_numbers(s) do
+    {:ok, m} = Poison.decode(s)
+    m
+    |> non_red_numbers
     |> List.flatten
   end
 
-  defp red_numbers(m) when is_map(m) do
+  defp non_red_numbers(m) when is_map(m) do
     vals = Map.values(m)
-    red_numbers = if Enum.member?(vals, "red") do
-      numbers_in(vals, [])
-    else
+    if Enum.member?(vals, "red") do
       []
+    else
+      vals
+      |> IO.inspect
+      |> Enum.map(&non_red_numbers/1)
     end
-    Enum.map(vals, &red_numbers/1) ++ red_numbers
   end
-  defp red_numbers(l) when is_list(l) do
-    l |> Enum.map(&red_numbers/1)
+  defp non_red_numbers(l) when is_list(l) do
+    l |> Enum.map(&non_red_numbers/1)
   end
-  defp red_numbers(val), do: []
+  defp non_red_numbers(val) when is_integer(val), do: val
+  defp non_red_numbers(_), do: []
 
   defp numbers_in([], acc), do: acc
   defp numbers_in([h|t], acc) when is_integer(h) do
@@ -55,4 +56,4 @@ end
 # # => 119433
 
 # Day12.non_red_sum
-# # => 99597
+# # => 68466
