@@ -24,11 +24,12 @@ defmodule Day11 do
   end
 
   defp increment_char_list(cl) do
-    i = cl
+    increment = &(&1+1)
+    cl
     |> Enum.map(&(&1 - ?a))
     |> Integer.undigits(26)
-
-    Integer.digits(i+1, 26)
+    |> increment.()
+    |> Integer.digits(26)
     |> Enum.map(&(&1 + ?a))
   end
 
