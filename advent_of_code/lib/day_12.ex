@@ -1,7 +1,6 @@
 defmodule Day12 do
   @input_file "data/day_12.txt"
   @number_regex ~r{(-?[\d]+)}
-  @red_json_object_regex ~r/{[^}]*"red"[^}]*\}/
 
   def sum do
     File.read!(@input_file)
@@ -32,9 +31,7 @@ defmodule Day12 do
     if Enum.member?(vals, "red") do
       []
     else
-      vals
-      |> IO.inspect
-      |> Enum.map(&non_red_numbers/1)
+      vals |> Enum.map(&non_red_numbers/1)
     end
   end
   defp non_red_numbers(l) when is_list(l) do
@@ -42,14 +39,6 @@ defmodule Day12 do
   end
   defp non_red_numbers(val) when is_integer(val), do: val
   defp non_red_numbers(_), do: []
-
-  defp numbers_in([], acc), do: acc
-  defp numbers_in([h|t], acc) when is_integer(h) do
-    numbers_in(t, [h|acc])
-  end
-  defp numbers_in([_|t], acc) do
-    numbers_in(t, acc)
-  end
 end
 
 # Day12.sum
