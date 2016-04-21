@@ -3,46 +3,41 @@ defmodule Day12 do
   @number_regex ~r{(-?[\d]+)}
 
   def sum do
+    sum(fn _ -> true end)
+  end
+
+  def color_filter(color \\ "red") do
+    sum(fn vals -> !Enum.member?(vals, color) end)
+  end
+
+  defp sum(filter) do
     File.read!(@input_file)
-    |> collect_numbers
+    |> collect_numbers(filter)
     |> Enum.sum
   end
 
-  def non_red_sum do
-    File.read!(@input_file)
-    |> collect_non_red_numbers
-    |> Enum.sum
-  end
-
-  defp collect_numbers(s) do
-    Regex.scan(@number_regex, s)
-    |> Enum.map(fn [_, num] -> String.to_integer(num) end)
-  end
-
-  defp collect_non_red_numbers(s) do
+  defp collect_numbers(s, filter) do
     {:ok, m} = Poison.decode(s)
-    m
-    |> non_red_numbers
-    |> List.flatten
+    m |> filtered_numbers(filter) |> List.flatten
   end
 
-  defp non_red_numbers(m) when is_map(m) do
+  defp filtered_numbers(m, f) when is_map(m) do
     vals = Map.values(m)
-    if Enum.member?(vals, "red") do
-      []
+    if f.(vals) do
+      vals |> Enum.map(&(filtered_numbers(&1, f)))
     else
-      vals |> Enum.map(&non_red_numbers/1)
+      []
     end
   end
-  defp non_red_numbers(l) when is_list(l) do
-    l |> Enum.map(&non_red_numbers/1)
+  defp filtered_numbers(l, f) when is_list(l) do
+    l |> Enum.map(&(filtered_numbers(&1, f)))
   end
-  defp non_red_numbers(val) when is_integer(val), do: val
-  defp non_red_numbers(_), do: []
+  defp filtered_numbers(val, _) when is_integer(val), do: val
+  defp filtered_numbers(_, _), do: []
 end
 
 # Day12.sum
 # # => 119433
 
-# Day12.non_red_sum
+# Day12.color_filter
 # # => 68466
