@@ -4,6 +4,7 @@
 #
 # Outputs Phoenix model files from a Ruby on Rails schema.rb file.
 
+require 'fileutils'
 require 'active_support'
 require 'active_support/core_ext/string/inflections'
 
@@ -195,6 +196,8 @@ if __FILE__ == $PROGRAM_NAME
     $stderr.puts "usage: schema_rb_to_phoenix_models.rb schema_file module_name dir"
     exit 1
   end
+
+  FileUtils.mkdir_p($output_dir)
 
   require schema_file
 
