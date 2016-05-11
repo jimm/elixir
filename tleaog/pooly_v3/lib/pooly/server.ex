@@ -16,7 +16,7 @@ defmodule Pooly.Server do
 
   # ================ API ================
 
-  def start_link(pools_config) do
+  def start_link(_supervisor, pools_config) do
     GenServer.start_link(__MODULE__, pools_config, name: __MODULE__)
   end
 

@@ -53,13 +53,6 @@ defmodule Pooly.PoolServer do
     {:ok, state}
   end
 
-  def handle_info(:start_worker_supervisor, %{pool_sup: pool_sup, config: config} = state) do
-    mfa = {config.module, config.function, config.args}
-    {:ok, worker_sup} = Supervisor.start_child(pool_sup, supervisor_spec(config.name, mfa))
-    workers = prepopulate(config.size, worker_sup)
-    {:noreply, %{state | worker_sup: worker_sup, workers: workers}}
-  end
-
   def handle_call(:checkout, {from_pid, _ref},
                   %{workers: workers, monitors: monitors} = state) do
     case workers do
@@ -87,6 +80,13 @@ defmodule Pooly.PoolServer do
       [] ->
         {:_noreply, state}
     end
+  end
+
+  def handle_info(:start_worker_supervisor, %{pool_sup: pool_sup, config: config} = state) do
+    mfa = {config.module, config.function, config.args}
+    {:ok, worker_sup} = Supervisor.start_child(pool_sup, supervisor_spec(config.name, mfa))
+    workers = prepopulate(config.size, worker_sup)
+    {:noreply, %{state | worker_sup: worker_sup, workers: workers}}
   end
 
   def handle_info({:DOWN, ref, _, _, _},

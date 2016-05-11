@@ -183,6 +183,15 @@ def add_foreign_key(_table1, _table2, _options={})
   # nop
 end
 
+def check_for_duplicate_names
+  names = Table.all_tables.map(&:name).map(&:singularize)
+  if names.length > names.uniq.length
+    $stderr.puts "warning: there are duplicate names"
+    $stderr.puts names.sort.join("\n")
+    exit 1
+  end
+end
+
 if __FILE__ == $PROGRAM_NAME
 
   schema_file, $module_name, $output_dir = *ARGV
@@ -198,6 +207,7 @@ if __FILE__ == $PROGRAM_NAME
   Table.all_tables.each do |t|
     t.create_has_many_references
   end
+  check_for_duplicate_names
   Table.all_tables.each do |t|
     File.open(File.join($output_dir, "#{t.name.singularize}.ex"), 'w') do |f|
       f.puts t.to_s
