@@ -1,16 +1,18 @@
 #!/usr/bin/env ruby
 #
-# usage: schema_rb_to_phoenix_models.rb schema_file module_name models_dir
+# For usage, run schema_rb_to_phoenix_models.rb -h
 #
 # Outputs Phoenix model files from a Ruby on Rails schema.rb file.
 
 require 'fileutils'
+require 'optparse'
 require 'active_support'
 require 'active_support/core_ext/string/inflections'
 
-$module_name = nil
-$output_dir = nil
-
+Options = Struct.new(:schema_file, :module_name, :output_dir, :use_name)
+# Unfortunately, this has to be global because there's no way to pass
+# it in to the methods create_table and friends.
+$args = Options.new
 
 class Field
   attr_accessor :name, :type, :options
@@ -37,8 +39,9 @@ class Table
     @@tables.values
   end
 
-  def initialize(module_name, name, options={})
-    @module_name, @name, @options = module_name, name, options
+  def initialize(module_name, use_name, name, options={})
+    @module_name, @use_name, @name, @options = module_name, use_name, name, options
+    @use_name ||= "#{@module_name}.Web"
     @name = name
     @fields = []
     @foreign_keys = []
@@ -117,7 +120,7 @@ class Table
 
     str = <<EOS
 defmodule #{full_module_name} do
-  use #{@module_name}.Web, :model
+  use #{@use_name}, :model
 
 EOS
 
@@ -171,7 +174,7 @@ end
 
 
 def create_table(name, options)
-  table = Table.new($module_name, name, options)
+  table = Table.new($args.module_name, $args.use_name, name, options)
   yield(table)
 end
 
@@ -183,7 +186,7 @@ def add_foreign_key(_table1, _table2, _options={})
   # nop
 end
 
-def check_for_duplicate_names
+def self.check_for_duplicate_names
   names = Table.all_tables.map(&:name).map(&:singularize)
   if names.length > names.uniq.length
     $stderr.puts "warning: there are duplicate names"
@@ -194,22 +197,40 @@ end
 
 if __FILE__ == $PROGRAM_NAME
 
-  schema_file, $module_name, $output_dir = *ARGV
-  unless $output_dir
-    $stderr.puts "usage: schema_rb_to_phoenix_models.rb schema_file module_name dir"
-    exit 1
+  op = OptionParser.new do |opts|
+    opts.on('-sFILE', '--schema=FILE', 'Rails schema.rb file') do |f|
+      $args.schema_file = f
+    end
+    opts.on('-mNAME', '--module=NAME', 'Model module prefix') do |name|
+      $args.module_name = name
+    end
+    opts.on('-oDIR', '--output_dir=DIR', 'Model directory') do |dir|
+      $args.output_dir = dir
+    end
+    opts.on('-uMOD', '--use=MOD', 'Module to use (default is NAME.Web)') do |mod|
+      $args.use_name = mod
+    end
+    opts.on_tail('-h', '--help', 'Prints this help') do
+      puts opts
+      exit
+    end
+  end.parse!
+
+  unless $args.module_name && $args.schema_file && $args.output_dir
+    $stderr.puts "error: module name, schema file, and output dir are required"
+    op.help                     # exits
   end
 
-  FileUtils.mkdir_p($output_dir)
+  FileUtils.mkdir_p($args.output_dir)
 
-  require schema_file
+  require $args.schema_file
 
   Table.all_tables.each do |t|
     t.create_has_many_references
   end
   check_for_duplicate_names
   Table.all_tables.each do |t|
-    File.open(File.join($output_dir, "#{t.name.singularize}.ex"), 'w') do |f|
+    File.open(File.join($args.output_dir, "#{t.name.singularize}.ex"), 'w') do |f|
       f.puts t.to_s
     end
   end
