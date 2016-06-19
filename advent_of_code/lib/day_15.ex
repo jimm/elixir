@@ -17,7 +17,7 @@ defmodule Day15 do
     ingredients = read_ingredients
     all_possible_measures(length(ingredients), 100)
     |> Enum.map(&(scores(ingredients, &1)))
-    |> Enum.filter(fn [calories|t] -> calories == 500 end)
+    |> Enum.filter(fn [calories|_] -> calories == 500 end)
     |> Enum.map(fn score -> score |> tl |> Enum.reduce(1, &(*/2)) end)
     |> Enum.max
   end

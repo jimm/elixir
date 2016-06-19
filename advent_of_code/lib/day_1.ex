@@ -21,7 +21,7 @@ defmodule Day1 do
   defp first_negative_one([c|rest], floor, index) when c == "(" do
     first_negative_one(rest, floor+1, index+1)
   end
-  defp first_negative_one([c|rest], floor, index) do
+  defp first_negative_one([_|rest], floor, index) do
     first_negative_one(rest, floor-1, index+1)
   end
 end

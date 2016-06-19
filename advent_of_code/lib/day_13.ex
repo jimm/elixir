@@ -32,9 +32,7 @@ defmodule Day13 do
   defp parse(line) do
     [_, name1, gain_or_lose, num_str, name2] = Regex.run(@parse_regex, line)
     dist = String.to_integer(num_str)
-    if gain_or_lose == "lose" do
-      dist = -dist
-    end
+    dist = if gain_or_lose == "lose", do: -dist, else: dist
     [name1, name2, dist]
   end
 

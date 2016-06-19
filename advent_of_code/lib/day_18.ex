@@ -16,10 +16,13 @@ defmodule Day18 do
   - All of the lights update simultaneously; they all consider the same
     current state before moving to the next.
 
+  Those are, of course, the rules for Conway's Game of Life.
+
   A board is a list of char lists.
   """
   def run(steps \\ 100, input_file \\ @input_file) do
-    life(steps, input_file, &life_rules/5)
+    cells = read_board(input_file)
+    life(cells, steps, &life_rules/5)
   end
 
   @doc """
@@ -29,13 +32,13 @@ defmodule Day18 do
       17
   """
   def stuck_lights(steps \\ 100, input_file \\ @input_file) do
-    life(steps, input_file, &stuck_life_rules/5)
+    cells = read_board(input_file)
+    |> turn_on_corner_lights
+    life(cells, steps, &stuck_life_rules/5)
   end
 
-  def life(steps, input_file, cell_rules) do
-    cells = read_board(input_file)
+  def life(cells, steps, cell_rules) do
     board = {cells, cells |> length, cells |> hd |> length}
-
     {final_cells, _, _} = (1..steps)
     |> Enum.reduce(board, fn _, b -> next_board(b, cell_rules) end)
 
@@ -83,10 +86,7 @@ defmodule Day18 do
   end
 
   defp stuck_life_rules({_, rows, cols}, row, col, _, _)
-  when (row == 0 and col == 0) or
-       (row == 0 and col == cols-1) or
-       (row == rows-1 and col == 0) or
-       (row == rows-1 and col == cols-1) do
+  when (row == 0 or row == rows-1) and (col == 0 or col == cols-1) do
     @on
   end
   defp stuck_life_rules(_, _, _, state, number_on_neighbors) do
@@ -112,6 +112,21 @@ defmodule Day18 do
      at(board, row+1, col),
      at(board, row+1, col+1)]
   end
+
+  # Not efficient, but good enough
+  def turn_on_corner_lights(cells) do
+    [cells |> hd |> replace_first_and_last] ++
+      (cells |> all_but_first_and_last) ++
+      [cells |> Enum.reverse |> hd |> replace_first_and_last]
+  end
+
+  def replace_first_and_last(row) do
+    [@on] ++ all_but_first_and_last(row) ++ [@on]
+  end
+
+  def all_but_first_and_last(l) do
+    l |> Enum.drop(1) |> Enum.reverse |> Enum.drop(1) |> Enum.reverse
+  end
 end
 
 # Day18.run(4, "test.txt")
@@ -119,3 +134,6 @@ end
 
 # Day18.stuck_lights
 # #=> 861 is too low
+
+# My bug: need to start out with all four turned on, so need to modify
+# reader or modify board after it is read.

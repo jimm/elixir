@@ -83,7 +83,7 @@ defmodule Day14 do
   defp update(%Day14{state: :flying, time_in_state: t, duration: t} = reindeer) do
     %{reindeer | state: :resting, time_in_state: 1}
   end
-  defp update(%Day14{state: :flying, time_in_state: t, duration: d} = reindeer) do
+  defp update(%Day14{state: :flying, time_in_state: t} = reindeer) do
       %{reindeer | dist_travelled: reindeer.dist_travelled + reindeer.speed,
         time_in_state: t + 1}
   end
@@ -91,7 +91,7 @@ defmodule Day14 do
     %{reindeer | state: :flying, time_in_state: 1,
       dist_travelled: reindeer.dist_travelled + reindeer.speed}
   end
-  defp update(%Day14{state: :resting, time_in_state: t, rest: r} = reindeer) do
+  defp update(%Day14{state: :resting} = reindeer) do
     %{reindeer | time_in_state: reindeer.time_in_state + 1}
   end
 
