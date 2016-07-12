@@ -20,9 +20,9 @@ in `c_src` is a modification of code posted by Joe Armstrong years ago.
 
 ## Rails to Phoenix
 
-A few scripts in this directory are attempts to automate conversion of Ruby
-on Rails models to Phoenix models. The best one so far is
-[schema_rb_to_phoenix_models.rb](schema_rb_to_phoenix_models.rb).
+[schema_rb_to_ecto_models.rb](schema_rb_to_ecto_models.rb) is an attempt to
+automate conversion of Ruby on Rails models to Phoenix models. It still
+needs to handle many-to-many-through associations.
 
 ## Replayer
 
