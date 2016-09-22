@@ -14,6 +14,30 @@ Options = Struct.new(:schema_file, :module_name, :output_dir, :use_name)
 # it in to the methods create_table and friends.
 $args = Options.new
 
+module ActiveRecord
+  class Schema
+    def self.init(rails_root, ignored_tables)
+      @@args = args
+    end
+
+    def self.define(_info, &block)
+      new.instance_eval(&block)
+    end
+
+    def create_table(name, options)
+      yield Table.new(@@args.module_name, @@args.use_name, name, options)
+    end
+
+    def add_index(*_args)
+      # nop
+    end
+
+    def add_foreign_key(*_args)
+      # nop
+    end
+  end
+end
+
 class Field
   attr_accessor :name, :type, :options
   def initialize(name, type, options)
@@ -159,32 +183,10 @@ EOS
 end
 
 
-module ActiveRecord
-  class Schema
-    def self.define(options)
-      yield
-    end
-  end
-end
-
-
 class String
   include ActiveSupport::Inflector
 end
 
-
-def create_table(name, options)
-  table = Table.new($args.module_name, $args.use_name, name, options)
-  yield(table)
-end
-
-def add_index(_table, _fields, _options={})
-  # nop
-end
-
-def add_foreign_key(_table1, _table2, _options={})
-  # nop
-end
 
 def self.check_for_duplicate_names
   names = Table.all_tables.map(&:name).map(&:singularize)
@@ -223,6 +225,7 @@ if __FILE__ == $PROGRAM_NAME
 
   FileUtils.mkdir_p($args.output_dir)
 
+  ActiveRecord::Schema.init($args)
   require $args.schema_file
 
   Table.all_tables.each do |t|
