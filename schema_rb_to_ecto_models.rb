@@ -16,7 +16,7 @@ $args = Options.new
 
 module ActiveRecord
   class Schema
-    def self.init(rails_root, ignored_tables)
+    def self.init(args)
       @@args = args
     end
 

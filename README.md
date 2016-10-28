@@ -1,7 +1,9 @@
 # Jim's Elixir Experiments
 
-This repo contains my experiments with Elixir. See also my other repos:
+This repo contains my experiments with Elixir. See also my other repos,
+including but not limited to:
 
+- https://github.com/jimm/blister
 - https://github.com/jimm/csvlixir
 - https://github.com/jimm/elixir-midifile
 - https://github.com/jimm/erlang-midilib
