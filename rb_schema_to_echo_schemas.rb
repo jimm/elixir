@@ -1,15 +1,21 @@
 #!/usr/bin/env ruby
 #
-# For usage, run schema_rb_to_phoenix_models.rb -h
+# For usage, run rb_schema_to_ecto_schemas.rb -h
 #
-# Outputs Phoenix model files from a Ruby on Rails schema.rb file.
+# Outputs Ecto 2.0 schema files by reading a Ruby on Rails schema.rb file.
+# Note that this script can know nothing about how you want to organize them
+# into Phoenix contexts.
 
 require 'fileutils'
+require 'pathname'
 require 'optparse'
 require 'active_support'
 require 'active_support/core_ext/string/inflections'
 
-Options = Struct.new(:schema_file, :module_name, :output_dir, :use_name)
+DEFAULT_USE_MODULE = "Ecto.Schema"
+DEFAULT_MODULE_NAME = "Unnamed"
+
+Options = Struct.new(:schema_file, :module_name, :output_dir, :use_name, :generate_changeset)
 # Unfortunately, this has to be global because there's no way to pass
 # it in to the methods create_table and friends.
 $args = Options.new
@@ -25,7 +31,7 @@ module ActiveRecord
     end
 
     def create_table(name, options)
-      yield Table.new(@@args.module_name, @@args.use_name, name, options)
+      yield Table.new(@@args.module_name, @@args.use_name, name, @@args.generate_changeset, options)
     end
 
     def add_index(*_args)
@@ -63,9 +69,19 @@ class Table
     @@tables.values
   end
 
-  def initialize(module_name, use_name, name, options={})
-    @module_name, @use_name, @name, @options = module_name, use_name, name, options
-    @use_name ||= "#{@module_name}.Web"
+  def self.check_for_duplicate_names
+    names = all_tables.map(&:name).map(&:singularize)
+    if names.length > names.uniq.length
+      $stderr.puts "warning: there are duplicate names"
+      $stderr.puts names.sort.join("\n")
+      exit 1
+    end
+  end
+
+  def initialize(module_name, use_name, name, generate_changeset, options={})
+    @module_name, @use_name, @name, @generate_changeset, @options =
+      module_name, use_name, name, generate_changeset, options
+    @use_name ||= DEFAULT_USE_MODULE
     @name = name
     @fields = []
     @foreign_keys = []
@@ -134,6 +150,8 @@ class Table
   end
 
   def to_s
+    var_name = @name.singularize
+
     required_fields = @fields.select(&:not_nullable?).map(&:name)
     optional_fields = @fields.select(&:nullable?).map(&:name)
 
@@ -142,19 +160,17 @@ class Table
 
     belongs_to_suffix = options[:id] == false ? ', references: :id' : nil
 
-    str = <<EOS
-defmodule #{full_module_name} do
-  use #{@use_name}, :model
+    str = <<~EOS
+    defmodule #{full_module_name} do
+      use #{@use_name}
 
-EOS
+    EOS
 
     if options[:id] == false
       str << "  @primary_key false\n"
     end
 
-    str << <<EOS
-  schema "#@name" do
-EOS
+    str << "  schema \"#@name\" do\n"
     @fields.each do |field|
       str << "    field :#{field.name}, #{field.type}\n"
     end
@@ -167,18 +183,24 @@ EOS
     if @timestamps
       str << "\n    timestamps inserted_at: :created_at\n"
     end
-    str << <<EOS
-  end
+    str << "  end\n"
+
+    if @generate_changeset
+      str << <<EOS
 
   @required_fields ~w(#{required_fields.join(' ')})
   @optional_fields ~w(#{optional_fields.join(' ')})
+  @all_fields @required_fields ++ @optional_fields
 
-  def changeset(model, params \\\\ :empty) do
-    model
-    |> cast(params, @required_fields, @optional_fields)
+  def changeset(%#{@name.classify}{} = #{var_name}, attrs) do
+    #{var_name}
+    |> cast(attrs, @all_fields)
+    |> validate_required(@required_fields)
   end
-end
 EOS
+    end
+
+    str << "end\n"
   end
 end
 
@@ -187,13 +209,16 @@ class String
   include ActiveSupport::Inflector
 end
 
-
-def self.check_for_duplicate_names
-  names = Table.all_tables.map(&:name).map(&:singularize)
-  if names.length > names.uniq.length
-    $stderr.puts "warning: there are duplicate names"
-    $stderr.puts names.sort.join("\n")
-    exit 1
+def infer_module_name_from_dir(path)
+  path = path.realpath
+  while !path.root? && path.basename.to_s != 'lib'
+    path = path.parent
+  end
+  if path.root? || path.basename.to_s != 'lib'
+    $stderr.puts "warning: can not infer module name from path; using \"#{DEFAULT_MODULE_NAME}\""
+    DEFAULT_MODULE_NAME
+  else
+    path.dirname.basename.to_s.classify
   end
 end
 
@@ -203,14 +228,17 @@ if __FILE__ == $PROGRAM_NAME
     opts.on('-sFILE', '--schema=FILE', 'Rails schema.rb file') do |f|
       $args.schema_file = f
     end
-    opts.on('-mNAME', '--module=NAME', 'Model module prefix') do |name|
+    opts.on('-mNAME', '--module=NAME', 'Schema module prefix (default is app name inferred from output dir)') do |name|
       $args.module_name = name
     end
-    opts.on('-oDIR', '--output_dir=DIR', 'Model directory') do |dir|
+    opts.on('-oDIR', '--output_dir=DIR', 'Schema directory') do |dir|
       $args.output_dir = dir
     end
-    opts.on('-uMOD', '--use=MOD', 'Module to use (default is NAME.Web)') do |mod|
+    opts.on('-uMOD', '--use=MOD', 'Module to `use` (default is Ecto.Schema)') do |mod|
       $args.use_name = mod
+    end
+    opts.on('-c', '--changeset', 'Generate `changeset` function (default is false)') do |_|
+      $args.generate_changeset = true
     end
     opts.on_tail('-h', '--help', 'Prints this help') do
       puts opts
@@ -218,20 +246,22 @@ if __FILE__ == $PROGRAM_NAME
     end
   end.parse!
 
-  unless $args.module_name && $args.schema_file && $args.output_dir
-    $stderr.puts "error: module name, schema file, and output dir are required"
+  unless $args.schema_file && $args.output_dir
+    $stderr.puts "error: schema file and output dir are required"
     op.help                     # exits
   end
 
-  FileUtils.mkdir_p($args.output_dir)
+  p = Pathname.new($args.output_dir)
+  p.mkpath
+  $args.module_name ||= infer_module_name_from_dir(p)
 
   ActiveRecord::Schema.init($args)
   require $args.schema_file
 
+  Table.check_for_duplicate_names
   Table.all_tables.each do |t|
     t.create_has_many_references
   end
-  check_for_duplicate_names
   Table.all_tables.each do |t|
     File.open(File.join($args.output_dir, "#{t.name.singularize}.ex"), 'w') do |f|
       f.puts t.to_s
