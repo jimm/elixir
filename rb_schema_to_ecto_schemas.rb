@@ -15,7 +15,10 @@ require 'active_support/core_ext/string/inflections'
 DEFAULT_USE_MODULE = "Ecto.Schema"
 DEFAULT_MODULE_NAME = "Unnamed"
 
-Options = Struct.new(:schema_file, :module_name, :output_dir, :use_name, :generate_changeset)
+Options = Struct.new(
+  :schema_file, :module_name, :output_dir, :use_name, :generate_changeset,
+  :models, :print_schema
+)
 # Unfortunately, this has to be global because there's no way to pass
 # it in to the methods create_table and friends.
 $args = Options.new
@@ -145,8 +148,38 @@ class Table
     end
   end
 
+  def model_name(name=@name)
+    ActiveSupport::Inflector.classify(name)
+  end
+
   def full_module_name(name=@name)
-    "#{@module_name}.#{ActiveSupport::Inflector.classify(name)}"
+    if @module_name
+      "#{@module_name}.#{model_name(name)}"
+    else
+      model_name(name)
+    end
+  end
+
+  def schema(prefix = "")
+    str = ''
+    if options[:id] == false
+      str << "#{prefix}@primary_key false\n"
+    end
+
+    str << "#{prefix}schema \"#@name\" do\n"
+    @fields.each do |field|
+      str << "#{prefix}  field :#{field.name}, #{field.type}\n"
+    end
+    @foreign_keys.each do |fk|
+      str << "#{prefix}  belongs_to :#{fk.name}, #{fk.type}#{belongs_to_suffix}\n"
+    end
+    @has_many_associations.each do |assoc|
+      str << "#{prefix}  has_many :#{assoc.name}, #{assoc.type}\n"
+    end
+    if @timestamps
+      str << "\n#{prefix}  timestamps inserted_at: :created_at\n"
+    end
+    str << "#{prefix}end\n"
   end
 
   def to_s
@@ -166,24 +199,7 @@ class Table
 
     EOS
 
-    if options[:id] == false
-      str << "  @primary_key false\n"
-    end
-
-    str << "  schema \"#@name\" do\n"
-    @fields.each do |field|
-      str << "    field :#{field.name}, #{field.type}\n"
-    end
-    @foreign_keys.each do |fk|
-      str << "    belongs_to :#{fk.name}, #{fk.type}#{belongs_to_suffix}\n"
-    end
-    @has_many_associations.each do |assoc|
-      str << "    has_many :#{assoc.name}, #{assoc.type}\n"
-    end
-    if @timestamps
-      str << "\n    timestamps inserted_at: :created_at\n"
-    end
-    str << "  end\n"
+    str << schema("  ")
 
     if @generate_changeset
       str << <<EOS
@@ -231,7 +247,7 @@ if __FILE__ == $PROGRAM_NAME
     opts.on('-mNAME', '--module=NAME', 'Schema module prefix (default is app name inferred from output dir)') do |name|
       $args.module_name = name
     end
-    opts.on('-oDIR', '--output_dir=DIR', 'Schema directory') do |dir|
+    opts.on('-oDIR', '--output-dir=DIR', 'Schema directory') do |dir|
       $args.output_dir = dir
     end
     opts.on('-uMOD', '--use=MOD', 'Module to `use` (default is Ecto.Schema)') do |mod|
@@ -240,20 +256,36 @@ if __FILE__ == $PROGRAM_NAME
     opts.on('-c', '--changeset', 'Generate `changeset` function (default is false)') do |_|
       $args.generate_changeset = true
     end
+    opts.on('-d', '--model=MODEL', 'Comma-separated list of models to generate (default is all)') do |val|
+      $args.models ||= []
+      $args.models += val.split(',').map(&:strip)
+    end
+    opts.on('-p', '--print-schema', 'Output schema to stdout, do not generate file') do |_|
+      $args.print_schema = true
+    end
     opts.on_tail('-h', '--help', 'Prints this help') do
       puts opts
       exit
     end
-  end.parse!
+  end
+  op.parse!
 
-  unless $args.schema_file && $args.output_dir
-    $stderr.puts "error: schema file and output dir are required"
-    op.help                     # exits
+  if $args.schema_file.nil?
+    $stderr.puts "error: schema file is required"
+    puts op
+    exit 1
+  end
+  if $args.output_dir.nil? && !$args.print_schema
+    $stderr.puts "error: output directory is required"
+    puts op
+    exit 1
   end
 
-  p = Pathname.new($args.output_dir)
-  p.mkpath
-  $args.module_name ||= infer_module_name_from_dir(p)
+  if $args.output_dir
+    p = Pathname.new($args.output_dir)
+    p.mkpath
+    $args.module_name ||= infer_module_name_from_dir(p)
+  end
 
   ActiveRecord::Schema.init($args)
   require $args.schema_file
@@ -262,9 +294,19 @@ if __FILE__ == $PROGRAM_NAME
   Table.all_tables.each do |t|
     t.create_has_many_references
   end
-  Table.all_tables.each do |t|
-    File.open(File.join($args.output_dir, "#{t.name.singularize}.ex"), 'w') do |f|
-      f.puts t.to_s
+
+  tables = Table.all_tables
+  if $args.models && $args.models.length > 0
+    tables.select! { |t| $args.models.include?(t.model_name) }
+  end
+  tables.each_with_index do |t, i|
+    if $args.print_schema
+      puts() if i > 0
+      puts t.schema
+    else
+      File.open(File.join($args.output_dir, "#{t.name.singularize}.ex"), 'w') do |f|
+        f.puts t.to_s
+      end
     end
   end
 end
