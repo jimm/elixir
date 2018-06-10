@@ -95,22 +95,23 @@ class Table
 
   def integer(name, options={})
     if name =~ /(\w+)_id$/
-      ref_name = ActiveSupport::Inflector.tableize($1)
       @foreign_keys << Field.new($1, full_module_name($1), options)
     else
       @fields << Field.new(name, ':integer', options)
     end
   end
 
-  %w(string datetime date time uuid boolean float decimal).each do |type|
+  %w(string text datetime date time uuid boolean float decimal).each do |type|
     define_method(type) do |name, options={}|
       db_type = case type.to_s
+                when 'text'
+                  ':string'
                 when 'datetime'
-                  'Ecto.DateTime'
+                  ':naive_datetime'
                 when 'date'
-                  'Ecto.Date'
+                  ':date'
                 when 'time'
-                  'Ecto.Time'
+                  ':naive_datetime'
                 when 'uuid'
                   'Ecto.UUID'
                 else
