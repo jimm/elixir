@@ -13,11 +13,11 @@ require 'active_support'
 require 'active_support/core_ext/string/inflections'
 
 DEFAULT_USE_MODULE = "Ecto.Schema"
-DEFAULT_MODULE_NAME = "Unnamed"
+DEFAULT_MODULE_PREFIX = "Unnamed"
 
 Options = Struct.new(
-  :schema_file, :module_name, :output_dir, :use_name, :generate_changeset,
-  :models, :print_schema
+  :schema_file, :module_prefix, :output_dir, :use_name, :generate_changeset,
+  :models, :print_schema, :fk_mappings
 )
 # Unfortunately, this has to be global because there's no way to pass
 # it in to the methods create_table and friends.
@@ -34,7 +34,7 @@ module ActiveRecord
     end
 
     def create_table(name, options)
-      yield Table.new(@@args.module_name, @@args.use_name, name, @@args.generate_changeset, options)
+      yield Table.new(@@args.module_prefix, @@args.use_name, name, @@args.generate_changeset, options)
     end
 
     def add_index(*_args)
@@ -48,15 +48,23 @@ module ActiveRecord
 end
 
 class Field
-  attr_accessor :name, :type, :options
-  def initialize(name, type, options)
-    @name, @type, @options = name, type, options
+  attr_accessor :name, :module_prefix, :module_name, :options
+
+  def initialize(name, module_prefix, module_name, options)
+    @name, @module_prefix, @module_name, @options =
+      name, module_prefix, module_name, options
   end
+
   def nullable?
-    options[:null] != false
+    @options[:null] != false
   end
-  def not_nullable?
-    options[:null] == false
+
+  def mapped_module_name
+    $args.fk_mappings[@module_name] || @module_name
+  end
+
+  def to_s
+    "#{@module_prefix}#{@module_prefix ? '.' : ''}#{@module_name}"
   end
 end
 
@@ -65,7 +73,7 @@ class Table
 
   @@tables = {}                 # k = table name, v = table
 
-  attr_accessor :module_name, :name, :options, :fields, :foreign_keys,
+  attr_accessor :module_prefix, :name, :options, :fields, :foreign_keys,
                 :has_many_associations
 
   def self.all_tables
@@ -81,9 +89,9 @@ class Table
     end
   end
 
-  def initialize(module_name, use_name, name, generate_changeset, options={})
-    @module_name, @use_name, @name, @generate_changeset, @options =
-      module_name, use_name, name, generate_changeset, options
+  def initialize(module_prefix, use_name, name, generate_changeset, options={})
+    @module_prefix, @use_name, @name, @generate_changeset, @options =
+      module_prefix, use_name, name, generate_changeset, options
     @use_name ||= DEFAULT_USE_MODULE
     @name = name
     @fields = []
@@ -95,9 +103,9 @@ class Table
 
   def integer(name, options={})
     if name =~ /(\w+)_id$/
-      @foreign_keys << Field.new($1, full_module_name($1), options)
+      @foreign_keys << Field.new($1, @module_prefix, model_name($1), options)
     else
-      @fields << Field.new(name, ':integer', options)
+      @fields << Field.new(name, nil, ':integer', options)
     end
   end
 
@@ -131,7 +139,7 @@ class Table
           @updated_at = true
         end
       else
-        @fields << Field.new(name, db_type, options)
+        @fields << Field.new(name, nil, db_type, options)
       end
     end
   end
@@ -144,21 +152,14 @@ class Table
     @foreign_keys.each do |fk|
       t = @@tables[fk.name.pluralize]
       if t
-        t.has_many_associations << Field.new(@name, full_module_name, {})
+        s = $args.fk_mappings[module_name] || module_name
+        t.has_many_associations << Field.new(@name, @module_prefix, s, {})
       end
     end
   end
 
   def model_name(name=@name)
     ActiveSupport::Inflector.classify(name)
-  end
-
-  def full_module_name(name=@name)
-    if @module_name
-      "#{@module_name}.#{model_name(name)}"
-    else
-      model_name(name)
-    end
   end
 
   def schema(prefix = "")
@@ -169,13 +170,13 @@ class Table
 
     str << "#{prefix}schema \"#@name\" do\n"
     @fields.each do |field|
-      str << "#{prefix}  field :#{field.name}, #{field.type}\n"
+      str << "#{prefix}  field :#{field.name}, #{field.mapped_module_name}\n"
     end
     @foreign_keys.each do |fk|
-      str << "#{prefix}  belongs_to :#{fk.name}, #{fk.type}#{belongs_to_suffix}\n"
+      str << "#{prefix}  belongs_to :#{fk.name}, #{fk.mapped_module_name}#{belongs_to_suffix}\n"
     end
     @has_many_associations.each do |assoc|
-      str << "#{prefix}  has_many :#{assoc.name}, #{assoc.type}\n"
+      str << "#{prefix}  has_many :#{assoc.name}, #{assoc.mapped_module_name}\n"
     end
     if @timestamps
       str << "\n#{prefix}  timestamps inserted_at: :created_at\n"
@@ -186,19 +187,24 @@ class Table
   def to_s
     var_name = @name.singularize
 
-    required_fields = @fields.select(&:not_nullable?).map(&:name)
+    required_fields = @fields.reject(&:nullable?).map(&:name)
     optional_fields = @fields.select(&:nullable?).map(&:name)
 
-    required_fields += @foreign_keys.select(&:not_nullable?).map{|fk| "#{fk.name}_id"}
+    required_fields += @foreign_keys.reject(&:nullable?).map{|fk| "#{fk.name}_id"}
     optional_fields += @foreign_keys.select(&:nullable?).map{|fk| "#{fk.name}_id"}
 
     belongs_to_suffix = options[:id] == false ? ', references: :id' : nil
 
     str = <<~EOS
-    defmodule #{full_module_name} do
+    defmodule #{@module_prefix}.#{model_name(name)} do
       use #{@use_name}
-
     EOS
+
+    unless @foreign_keys.empty?
+      names = @foreign_keys.map(&:module_name)
+      str << "  alias #{@module_prefix}.{#{names.join(', ')}}\n"
+    end
+    str << "\n"
 
     str << schema("  ")
 
@@ -226,7 +232,7 @@ class String
   include ActiveSupport::Inflector
 end
 
-def infer_module_name_from_dir(path)
+def infer_module_prefix_from_dir(path)
   path = path.realpath
   while !path.root? && path.basename.to_s != 'lib'
     path = path.parent
@@ -240,13 +246,13 @@ def infer_module_name_from_dir(path)
 end
 
 if __FILE__ == $PROGRAM_NAME
-
+  $args.fk_mappings = {}
   op = OptionParser.new do |opts|
     opts.on('-sFILE', '--schema=FILE', 'Rails schema.rb file') do |f|
       $args.schema_file = f
     end
     opts.on('-mNAME', '--module=NAME', 'Schema module prefix (default is app name inferred from output dir)') do |name|
-      $args.module_name = name
+      $args.module_prefix = name
     end
     opts.on('-oDIR', '--output-dir=DIR', 'Schema directory') do |dir|
       $args.output_dir = dir
@@ -260,6 +266,13 @@ if __FILE__ == $PROGRAM_NAME
     opts.on('-d', '--model=MODEL', 'Comma-separated list of models to generate (default is all)') do |val|
       $args.models ||= []
       $args.models += val.split(',').map(&:strip)
+    end
+    opts.on('-f', '--fk-mapping=STR', 'Comma-separated list of foreign key guess-name mappings') do |str|
+      $args.fk_mappings ||= {}
+      str.split(',').each do |s|
+        old, new = s.strip.split(/[^\w]/)
+        $args.fk_mappings[old] = new
+      end
     end
     opts.on('-p', '--print-schema', 'Output schema to stdout, do not generate file') do |_|
       $args.print_schema = true
@@ -285,7 +298,7 @@ if __FILE__ == $PROGRAM_NAME
   if $args.output_dir
     p = Pathname.new($args.output_dir)
     p.mkpath
-    $args.module_name ||= infer_module_name_from_dir(p)
+    $args.module_prefix ||= infer_module_prefix_from_dir(p)
   end
 
   ActiveRecord::Schema.init($args)
