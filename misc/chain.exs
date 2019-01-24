@@ -1,3 +1,6 @@
+# Creates N processes chained together and use them. Note that there's a
+# system-wide max number of processes, which can be overridden on the
+# command line.
 defmodule Chain do
   def counter(next_pid) do
     receive do
@@ -5,8 +8,10 @@ defmodule Chain do
     end
   end
 
+  # Creates a chain of N processes and returns the last one. They are
+  # chained together by their spawned calls to `counter`.
   def create_processes(n) do
-    last = Enum.reduce(1..n, self,
+    last = Enum.reduce(1..n, self(),
       fn (_, send_to) ->
         spawn(Chain, :counter, [send_to])
       end)
@@ -20,6 +25,9 @@ defmodule Chain do
     end
   end
 
+  # Creates N processes, each of which receives an integer message and sends
+  # that number + 1 to the next process in the chain. Returns the last value
+  # (i.e. the number of processes).
   def run(n) do
     IO.puts inspect :timer.tc(Chain, :create_processes, [n])
   end
