@@ -1,18 +1,17 @@
 defmodule YamlToMap do
-
   @moduledoc """
   Converts the output of :yamerl_constr (using the :detailed_constr option)
   and turns it into a list of Elixir maps.
   """
 
   def to_maps(docs) when is_list(docs) do
-    docs |> Enum.map &_to_map(&1)
+    docs |> Enum.map(&_to_map(&1))
   end
 
   defp _to_map({:yamerl_doc, doc}), do: _to_map(doc)
 
   defp _to_map({:yamerl_seq, :yamerl_node_seq, _tag, _loc, seq, _n}) do
-    seq |> Enum.map &_to_map(&1)
+    seq |> Enum.map(&_to_map(&1))
   end
 
   defp _to_map({:yamerl_map, :yamerl_node_map, _tag, _loc, map_tuples}) do

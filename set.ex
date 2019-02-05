@@ -22,7 +22,7 @@ defmodule Set do
 
       iex> (0..5) |> Enum.map(fn k -> Set.permutations([1, 2, 3, 4, 5], k) |> length end)
       [1, 5, 20, 60, 120, 120]
- 
+
   Equal values are treated as distinct. 
 
       iex> Set.permutations([1, 2, 3, 4, 3], 2)
@@ -33,10 +33,11 @@ defmodule Set do
        [3, 1], [3, 2], [3, 4], [3, 3]]
   """
   def permutations(_, 0), do: [[]]
-  def permutations(xs, 1), do: xs |> Enum.map(&([&1]))
+  def permutations(xs, 1), do: xs |> Enum.map(&[&1])
+
   def permutations(xs, k) do
     for x <- xs,
-        y <- permutations(List.delete(xs, x), k-1) do
+        y <- permutations(List.delete(xs, x), k - 1) do
       [x | y]
     end
   end
@@ -54,7 +55,7 @@ defmodule Set do
 
       iex> (0..5) |> Enum.map(fn k -> Set.combinations([1, 2, 3, 4, 5], k) |> length end)
       [1, 5, 10, 10, 5, 1]
- 
+
   Equal values are treated as distinct. 
 
       iex> Set.combinations([1, 3, 3, 4], 2) |> Enum.sort
@@ -63,12 +64,15 @@ defmodule Set do
        [3, 4]]
   """
   def combinations(_, 0), do: [[]]
-  def combinations(xs, 1), do: xs |> Enum.map(&([&1]))
+  def combinations(xs, 1), do: xs |> Enum.map(&[&1])
   def combinations(xs, k) when k >= length(xs), do: [xs]
-  def combinations([h|t], k) do
-    with_h = for cs <- combinations(t, k-1) do
-      [h | cs]
-    end
+
+  def combinations([h | t], k) do
+    with_h =
+      for cs <- combinations(t, k - 1) do
+        [h | cs]
+      end
+
     with_h ++ combinations(t, k)
   end
 end

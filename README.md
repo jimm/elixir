@@ -22,7 +22,7 @@ in `c_src` is a modification of code posted by Joe Armstrong years ago.
 
 ## Rails to Phoenix
 
-[schema_rb_to_ecto_models.rb](schema_rb_to_ecto_models.rb) is an attempt to
+[rb_schema_to_ecto_schemas.rb](rb_schema_to_ecto_schemas.rb) is an attempt to
 automate conversion of Ruby on Rails models to Phoenix models. It still
 needs to handle many-to-many-through associations.
 
