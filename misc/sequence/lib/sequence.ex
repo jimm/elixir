@@ -8,7 +8,7 @@ defmodule Sequence do
 
     children = [
       # Define workers and child supervisors to be supervised
-      worker(Sequence.server, [100])
+      worker(Sequence.server(), [100])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

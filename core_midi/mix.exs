@@ -6,17 +6,17 @@ defmodule CoreMIDI.Mixfile do
      version: "0.0.1",
      elixir: "~> 1.1-dev",
      compilers: [:make, :elixir, :app],
-     aliases: aliases,
+     aliases: aliases(),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps()]
   end
 
   # Configuration for the OTP application
   #
   # Type `mix help compile.app` for more information
   def application do
-    [applications: [:logger, :core_midi]]
+    [applications: [:logger]]
   end
 
   # Dependencies can be Hex packages:
