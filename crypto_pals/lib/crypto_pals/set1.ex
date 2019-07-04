@@ -146,16 +146,13 @@ end
 
   # ================ 6 ================
 
-  def break_repeating_key_xor, do: break_repeating_key_xor("data/6.txt")
-
   @doc """
-  Break repeating-key XOR in a file.
+  Break repeating-key XOR in a file, i.e. Vigenere.
 
   ## Examples
 
-      # iex> CryptoPals.Set1.break_repeating_key_xor("data/6.txt")
-      # "???"
-
+      iex> CryptoPals.Set1.break_repeating_key_xor("data/6.txt")
+      "???"
   """
   def break_repeating_key_xor(path) do
     data =
@@ -169,15 +166,18 @@ end
       translated_blocks
       |> Enum.map(&single_byte_xor_cipher_byte/1)
       |> Enum.map(fn({cipher_byte, _englishness, _s}) ->
-        # IO.puts _englishness
-        # IO.puts _s
+        _englishness |> to_string |> IO.inspect(label: "englishness") # DEBUG
+        _s |> to_string |> IO.inspect(label: "xored string") # DEBUG
         cipher_byte
       end)
     key = to_string(key_bytes)
+    |> IO.inspect(label: "key") # DEBUG
 
-    to_string(data)
+    data
+    |> to_string
     |> repeating_key_xor(key)
     |> hex_to_bytes
+    |> to_string
   end
 
   @doc """
@@ -226,13 +226,17 @@ end
 
   ## Examples
 
-      iex> CryptoPals.Set1.translate_blocks([[1, 2, 3], [4, 5, 6]])
-      [[1, 4], [2, 5], [3, 6]]
+      iex> CryptoPals.Set1.translate_blocks([[1, 2, 3], [4, 5, 6], [7, 8]])
+      [[1, 4, 7], [2, 5, 8], [3, 6]]
   """ 
-  def translate_blocks(blocks), do: translate_blocks(blocks, [])
+  def translate_blocks(blocks), do: translate_blocks(Enum.reverse(blocks), [])
 
-  defp translate_blocks([], translated), do: Enum.reverse(translated)
-  defp translate_blocks([[]|_], translated), do: Enum.reverse(translated)
+  defp translate_blocks([], translated) do
+    Enum.reverse(translated |> Enum.map(&Enum.reverse/1))
+  end
+  defp translate_blocks([[]|t], translated) do
+    translate_blocks(t, translated)
+  end
   defp translate_blocks(lists, translated) do
     # inefficient (goes through lists twice)
     heads = lists |> Enum.map(fn(l) -> hd(l) end)
