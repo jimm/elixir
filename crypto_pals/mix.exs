@@ -4,8 +4,8 @@ defmodule CryptoPals.Mixfile do
   def project do
     [app: :crypto_pals,
      version: "0.0.1",
-     elixir: "~> 1.2",
-     deps: deps]
+     elixir: "~> 1.9",
+     deps: deps()]
   end
 
   # Configuration for the OTP application

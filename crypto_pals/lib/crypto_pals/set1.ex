@@ -1,8 +1,7 @@
 defmodule CryptoPals.Set1 do
 
   use Bitwise
-  use CryptoPals.Englishness
-  use CryptoPals.Hamming
+  alias CryptoPals.{Englishness, Hamming}
   use CryptoPals.Hex
   require Integer
 
@@ -28,7 +27,7 @@ defmodule CryptoPals.Set1 do
     b = hex_to_bytes(s)
     (0..255)
     |> Enum.map(&(single_byte_xor_cipher(b, &1)))
-    |> Enum.max_by(&englishness/1)
+    |> Enum.max_by(&Englishness.englishness/1)
   end
 
   # Apply byte as XOR key to hex encoded string s and return string.
@@ -114,12 +113,12 @@ end
   def find_xored_in_file(path) do
     File.stream!(path)
     |> Stream.map(&best_xored/1)
-    |> Enum.max_by(&englishness/1)
-    |> String.rstrip
+    |> Enum.max_by(&Englishness.englishness/1)
+    |> String.trim_trailing
   end
 
   defp best_xored(line) do
-    line |> String.rstrip |> single_byte_xor_cipher
+    line |> String.trim_trailing |> single_byte_xor_cipher
   end
 
   # ================ 5 ================
@@ -134,7 +133,7 @@ end
   """
   def repeating_key_xor(plaintext, key) do
     key = String.duplicate(key, div(byte_size(plaintext), byte_size(key)) + 1)
-    Stream.zip(String.to_char_list(plaintext), String.to_char_list(key))
+    Stream.zip(String.to_charlist(plaintext), String.to_charlist(key))
     |> Stream.map(fn({b0, b1}) -> byte_xor_16(b0, b1) end)
     |> Enum.join
   end
@@ -163,9 +162,9 @@ end
       File.read!(path)
       |> String.replace("\n", "")
       |> Base.decode64!
-      |> String.to_char_list
+      |> String.to_charlist
     keysize = likely_keysize(data)
-    translated_blocks = data |> Enum.chunk(keysize) |> translate_blocks
+    translated_blocks = data |> Enum.chunk_every(keysize) |> translate_blocks
     key_bytes =
       translated_blocks
       |> Enum.map(&single_byte_xor_cipher_byte/1)
@@ -190,14 +189,14 @@ end
       iex> CryptoPals.Set1.single_byte_xor_cipher_byte(
       ...>   "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
       ...>   |> CryptoPals.Hex.hex_to_bytes
-      ...>   |> String.to_char_list)
+      ...>   |> String.to_charlist)
       {88, 201/34, "Cooking MC's like a pound of bacon"}
   """
   def single_byte_xor_cipher_byte(s) do
     (0..255)
     |> Enum.reduce({0, 0, ""}, fn(byte, {_, e_englishness, _} = acc) ->
       xored = s |> Enum.map(fn(c) -> c ^^^ byte end)
-    e = englishness(to_string(xored))
+    e = Englishness.englishness(to_string(xored))
       if e > e_englishness do
         {byte, e, to_string(xored)}
       else
@@ -215,7 +214,7 @@ end
     (2..40)
     |> Enum.map(&(num_blocks_of_size(data, &1, 2)))
     |> Enum.min_by(fn([block0, block1]) ->
-      div(hamming_distance(block0, block1), length(block0))
+      div(Hamming.distance(block0, block1), length(block0))
     end)
     |> hd
     |> length
@@ -251,7 +250,7 @@ end
   """
   def num_blocks_of_size(data, size, num_blocks) do
     data
-    |> Enum.chunk(size)
+    |> Stream.chunk_every(size)
     |> Enum.take(num_blocks)
   end
 
