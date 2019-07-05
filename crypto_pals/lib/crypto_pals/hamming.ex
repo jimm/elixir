@@ -57,8 +57,6 @@ defmodule CryptoPals.Hamming do
 
   def distance(s0, s1) when is_list(s0) and is_list(s1) do
     Stream.zip(s0, s1)
-    |> Enum.reduce(0, fn({c0, c1}, acc) -> acc + count_one_bits(c0 ^^^ c1) end)
+    |> Enum.reduce(0, fn({c0, c1}, acc) -> acc + @one_bits_in_bytes[c0 ^^^ c1] end)
   end
-
-  def count_one_bits(n), do: @one_bits_in_bytes[n]
 end

@@ -20,7 +20,9 @@ defmodule CryptoPals.Set1 do
   mystery byte and returns the string.
 
   ## Examples
-      iex> CryptoPals.Set1.single_byte_xor_cipher("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
+      iex> CryptoPals.Set1.single_byte_xor_cipher(
+      ...>   "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
+      ...> )
       "Cooking MC's like a pound of bacon"
   """
   def single_byte_xor_cipher(s) do
@@ -103,9 +105,6 @@ end
 
   ## Examples
 
-      Commented out, because this takes around 10 seconds to run. It works,
-      though.
-
       iex> CryptoPals.Set1.find_xored_in_file("data/4.txt")
       "Now that the party is jumping"
 
@@ -128,20 +127,15 @@ end
 
   ## Examples
 
-      iex> CryptoPals.Set1.repeating_key_xor("Burning 'em, if you ain't quick and nimble\\nI go crazy when I hear a cymbal", "ICE")
+      iex> CryptoPals.Set1.repeating_key_xor(
+      ...>   String.to_charlist("Burning 'em, if you ain't quick and nimble\\nI go crazy when I hear a cymbal"),
+      ...>   String.to_charlist("ICE")
+      ...> ) |> Enum.map(&CryptoPals.Set1.even_len_hex_str/1) |> Enum.join
       "0B3637272A2B2E63622C2E69692A23693A2A3C6324202D623D63343C2A26226324272765272A282B2F20430A652E2C652A3124333A653E2B2027630C692B20283165286326302E27282F"
   """
   def repeating_key_xor(plaintext, key) do
-    key = String.duplicate(key, div(byte_size(plaintext), byte_size(key)) + 1)
-    Stream.zip(String.to_charlist(plaintext), String.to_charlist(key))
-    |> Stream.map(fn({b0, b1}) -> byte_xor_16(b0, b1) end)
-    |> Enum.join
-  end
-
-  # Takes two bytes, XORs them, and turns the result into a two-character
-  # hex string.
-  defp byte_xor_16(b0, b1) do
-      b0 ^^^ b1 |> even_len_hex_str
+    Stream.zip(plaintext, Stream.cycle(key))
+    |> Enum.map(fn({b0, b1}) -> b0 ^^^ b1 end)
   end
 
   # ================ 6 ================
@@ -152,31 +146,28 @@ end
   ## Examples
 
       iex> CryptoPals.Set1.break_repeating_key_xor("data/6.txt")
-      "???"
-  """
+      ...>   |> String.split("\\n") |> hd
+      "I'm back and I'm ringin' the bell "
+  """ # ' <== un-confuse Emacs Elixir mode font-lock
   def break_repeating_key_xor(path) do
     data =
       File.read!(path)
       |> String.replace("\n", "")
       |> Base.decode64!
       |> String.to_charlist
-    keysize = likely_keysize(data)
-    translated_blocks = data |> Enum.chunk_every(keysize) |> translate_blocks
-    key_bytes =
-      translated_blocks
-      |> Enum.map(&single_byte_xor_cipher_byte/1)
-      |> Enum.map(fn({cipher_byte, _englishness, _s}) ->
-        _englishness |> to_string |> IO.inspect(label: "englishness") # DEBUG
-        _s |> to_string |> IO.inspect(label: "xored string") # DEBUG
-        cipher_byte
-      end)
-    key = to_string(key_bytes)
-    |> IO.inspect(label: "key") # DEBUG
+    likely_keysizes(data, 2, 40, 4)
+      |> Enum.map(&(break_repeating_key_xor(&1, data)))
+      |> Enum.max_by(&Englishness.englishness/1)
+  end
+
+  defp break_repeating_key_xor(keysize, data) do
+    rotated_blocks = data |> Enum.chunk_every(keysize) |> rotate_blocks
+    key =
+      rotated_blocks
+      |> Enum.map(fn(block) -> {b, _, _} = single_byte_xor_cipher_byte(block); b end)
 
     data
-    |> to_string
     |> repeating_key_xor(key)
-    |> hex_to_bytes
     |> to_string
   end
 
@@ -189,7 +180,8 @@ end
       iex> CryptoPals.Set1.single_byte_xor_cipher_byte(
       ...>   "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
       ...>   |> CryptoPals.Hex.hex_to_bytes
-      ...>   |> String.to_charlist)
+      ...>   |> String.to_charlist
+      ...> )
       {88, 201/34, "Cooking MC's like a pound of bacon"}
   """
   def single_byte_xor_cipher_byte(s) do
@@ -206,18 +198,26 @@ end
   end
 
   @doc """
-  Return the likely keysize of data. Try various key sizes. For each size,
-  take the first two blocks and compute the Hamming distance between. The
-  size that has the minimum distance is the likely keysize.
+  Return a list of the likely keysizes of `data`. Try key sizes between
+  `min_keylen` and `max_keylen` inclusive. For each size, take the first
+  `num_blocks` blocks and compute the Hamming distance between all of them.
+  Smaller minimum distances are likely keysizes.
+
+  ## Examples
+      iex> CryptoPals.Set1.likely_keysizes('abcdabcdefghefghijklijkl') |> hd
+      4
   """
-  def likely_keysize(data) do
-    (2..40)
-    |> Enum.map(&(num_blocks_of_size(data, &1, 2)))
-    |> Enum.min_by(fn([block0, block1]) ->
-      div(Hamming.distance(block0, block1), length(block0))
-    end)
-    |> hd
-    |> length
+  def likely_keysizes(data, min_keylen \\ 2, max_keylen \\ 40, num_blocks \\ 2) do
+    max_keylen = min(max_keylen, div(length(data), 2))
+    (min_keylen..max_keylen)
+    |> Enum.sort_by(fn(keylen) ->
+        blocks = num_blocks_of_size(data, keylen, num_blocks)
+        blocks
+          |> pairs
+          |> Enum.map(fn([b0, b1]) -> div(Hamming.distance(b0, b1), keylen) end)
+          |> Enum.sum
+      end)
+    |> Enum.take(4)
   end
 
   @doc """
@@ -226,22 +226,25 @@ end
 
   ## Examples
 
-      iex> CryptoPals.Set1.translate_blocks([[1, 2, 3], [4, 5, 6], [7, 8]])
+      iex> CryptoPals.Set1.rotate_blocks([[1, 2, 3], [4, 5, 6], [7, 8]])
       [[1, 4, 7], [2, 5, 8], [3, 6]]
+      iex> CryptoPals.Set1.rotate_blocks([[1, 4, 7], [2, 5, 8], [3, 6]])
+      [[1, 2, 3], [4, 5, 6], [7, 8]]
+      
   """ 
-  def translate_blocks(blocks), do: translate_blocks(Enum.reverse(blocks), [])
+  def rotate_blocks(blocks), do: rotate_blocks(Enum.reverse(blocks), [])
 
-  defp translate_blocks([], translated) do
-    Enum.reverse(translated |> Enum.map(&Enum.reverse/1))
+  defp rotate_blocks([], rotated) do
+    Enum.reverse(rotated |> Enum.map(&Enum.reverse/1))
   end
-  defp translate_blocks([[]|t], translated) do
-    translate_blocks(t, translated)
+  defp rotate_blocks([[]|t], rotated) do
+    rotate_blocks(t, rotated)
   end
-  defp translate_blocks(lists, translated) do
+  defp rotate_blocks(lists, rotated) do
     # inefficient (goes through lists twice)
     heads = lists |> Enum.map(fn(l) -> hd(l) end)
     tails = lists |> Enum.map(fn(l) -> tl(l) end)
-    translate_blocks(tails, [heads | translated])
+    rotate_blocks(tails, [heads | rotated])
   end
 
   @doc """
@@ -258,26 +261,29 @@ end
     |> Enum.take(num_blocks)
   end
 
+  @doc """
+  Returns all combinations of pairs of items in a list.
+
+  ## Examples
+
+      iex> CryptoPals.Set1.pairs([1, 2, 3, 4])
+      [[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]]
+  """
+  def pairs(list), do: pairs(list, [])
+
+  defp pairs([], acc), do: Enum.reverse(acc)
+  defp pairs([_], acc), do: Enum.reverse(acc)
+  defp pairs([h|t], acc) when is_list(t) do
+    pairwise = Enum.map(t, &([h, &1]))
+    pairs(t, Enum.reverse(pairwise) ++ acc)
+  end
+  defp pairs([h|t], acc) do
+    pairs(t, [[h,t]|acc])
+  end
+
   # ================ 7 ================
 
   # def aes_in_ecb_mode(data, key, :encrypt) do
   #   :crypto.block_encrypt(:aes_ecb, key, random_iv(), data)
   # end
-
-  # ================ helpers ================
-
-  # defp debug(val) when is_binary(val) do
-  #   if String.printable?(val) do
-  #     IO.puts "** #{val} **"
-  #   else
-  #     IO.puts "** #{inspect(val)} **"
-  #   end
-  #   val
-  # end
-
-  # defp debug(val) do
-  #   IO.puts "** #{inspect(val)} **"
-  #   val
-  # end
-
 end
