@@ -39,4 +39,8 @@ defmodule CryptoPals.Hex do
     n = String.to_integer(<<b0, b1>>, 16)
     hex_to_bytes(rest, [n | out])
   end
+
+  def base64_to_bytes(s) do
+    s |> Base.decode64!
+  end
 end       

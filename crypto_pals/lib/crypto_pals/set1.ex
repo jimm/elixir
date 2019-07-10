@@ -300,18 +300,18 @@ end
   ## Examples
 
       iex> CryptoPals.Set1.aes_in_ecb_mode_from_file("data/7.txt")
-      ...>   String.split("\\n") |> hd
+      ...> |> String.split("\\n") |> hd()
       "I'm back and I'm ringin' the bell "
   """
   def aes_in_ecb_mode_from_file(path) do
     data = binary_from_ascii_lines(path)
+    |> CryptoPals.Hex.base64_to_bytes
     key = "YELLOW SUBMARINE"
     aes_in_ecb_mode(data, key, :decrypt)
   end
 
   def aes_in_ecb_mode(data, key, :decrypt) do
-    iv = <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>
-    :crypto.crypto_one_time(:aes_128_ecb, key, iv, data, false)
+    :crypto.crypto_one_time(:aes_128_ecb, key, <<>>, data, false)
   end
 
   # ================ helpers ================
