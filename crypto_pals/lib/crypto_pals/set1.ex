@@ -133,8 +133,9 @@ end
       ...> ) |> Enum.map(&CryptoPals.Set1.even_len_hex_str/1) |> Enum.join
       "0B3637272A2B2E63622C2E69692A23693A2A3C6324202D623D63343C2A26226324272765272A282B2F20430A652E2C652A3124333A653E2B2027630C692B20283165286326302E27282F"
   """
+  @spec repeating_key_xor(String.t(), String.t()) :: String.t()
   def repeating_key_xor(plaintext, key) do
-    Stream.zip(plaintext, Stream.cycle(key))
+    Stream.zip(to_charlist(plaintext), Stream.cycle(to_charlist(key)))
     |> Enum.map(fn({b0, b1}) -> b0 ^^^ b1 end)
   end
 
@@ -145,30 +146,33 @@ end
 
   ## Examples
 
-      iex> CryptoPals.Set1.break_repeating_key_xor("data/6.txt")
+      iex> CryptoPals.Set1.break_repeating_key_xor_from_file("data/6.txt")
       ...>   |> String.split("\\n") |> hd
       "I'm back and I'm ringin' the bell "
-  """ # ' <== un-confuse Emacs Elixir mode font-lock
-  def break_repeating_key_xor(path) do
-    data =
-      File.read!(path)
-      |> String.replace("\n", "")
-      |> Base.decode64!
-      |> String.to_charlist
+  """
+  @spec break_repeating_key_xor_from_file(String.t()) :: String.t()
+  def break_repeating_key_xor_from_file(path) do
+    data = binary_from_ascii_lines(path)
+    |> to_string
+    |> Base.decode64!
     likely_keysizes(data, 2, 40, 4)
-      |> Enum.map(&(break_repeating_key_xor(&1, data)))
+      |> Enum.map(fn(keysize) -> keysize |> break_repeating_key_xor(data) |> to_string end)
       |> Enum.max_by(&Englishness.englishness/1)
   end
 
+  @spec break_repeating_key_xor(integer, binary) :: String.t()
   defp break_repeating_key_xor(keysize, data) do
-    rotated_blocks = data |> Enum.chunk_every(keysize) |> rotate_blocks
+    byte_list = :binary.bin_to_list(data) 
     key =
-      rotated_blocks
+      byte_list
+      |> Enum.chunk_every(keysize)
+      |> rotate_blocks
       |> Enum.map(fn(block) -> {b, _, _} = single_byte_xor_cipher_byte(block); b end)
+      |> to_string
 
     data
-    |> repeating_key_xor(key)
     |> to_string
+    |> repeating_key_xor(to_string(key))
   end
 
   @doc """
@@ -204,11 +208,11 @@ end
   Smaller minimum distances are likely keysizes.
 
   ## Examples
-      iex> CryptoPals.Set1.likely_keysizes('abcdabcdefghefghijklijkl') |> hd
+      iex> CryptoPals.Set1.likely_keysizes(:binary.list_to_bin('abcdabcdefghefghijklijkl')) |> hd
       4
   """
   def likely_keysizes(data, min_keylen \\ 2, max_keylen \\ 40, num_blocks \\ 2) do
-    max_keylen = min(max_keylen, div(length(data), 2))
+    max_keylen = min(max_keylen, div(byte_size(data), 2))
     (min_keylen..max_keylen)
     |> Enum.sort_by(fn(keylen) ->
         blocks = num_blocks_of_size(data, keylen, num_blocks)
@@ -254,7 +258,16 @@ end
 
       iex> CryptoPals.Set1.num_blocks_of_size([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 3, 2)
       [[1, 2, 3], [4, 5, 6]]
+      iex> CryptoPals.Set1.num_blocks_of_size(<<1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12>>, 3, 2)
+      [<<1, 2, 3>>, <<4, 5, 6>>]
   """
+  def num_blocks_of_size(data, size, num_blocks) when is_binary(data) do
+    data
+    |> :binary.bin_to_list
+    |> num_blocks_of_size(size, num_blocks)
+    |> Enum.map(&:binary.list_to_bin/1)
+  end
+
   def num_blocks_of_size(data, size, num_blocks) do
     data
     |> Stream.chunk_every(size)
@@ -283,7 +296,29 @@ end
 
   # ================ 7 ================
 
-  # def aes_in_ecb_mode(data, key, :encrypt) do
-  #   :crypto.block_encrypt(:aes_ecb, key, random_iv(), data)
-  # end
+  @doc """
+  ## Examples
+
+      iex> CryptoPals.Set1.aes_in_ecb_mode_from_file("data/7.txt")
+      ...>   String.split("\\n") |> hd
+      "I'm back and I'm ringin' the bell "
+  """
+  def aes_in_ecb_mode_from_file(path) do
+    data = binary_from_ascii_lines(path)
+    key = "YELLOW SUBMARINE"
+    aes_in_ecb_mode(data, key, :decrypt)
+  end
+
+  def aes_in_ecb_mode(data, key, :decrypt) do
+    iv = <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>
+    :crypto.crypto_one_time(:aes_128_ecb, key, iv, data, false)
+  end
+
+  # ================ helpers ================
+
+  @spec binary_from_ascii_lines(String.t()) :: binary
+  defp binary_from_ascii_lines(path) do
+    File.read!(path)
+    |> String.replace("\n", "")
+  end
 end
