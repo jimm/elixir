@@ -3,11 +3,14 @@
 This repo contains my experiments with Elixir. See also my other repos,
 including but not limited to:
 
-- https://github.com/jimm/blister
-- https://github.com/jimm/csvlixir
-- https://github.com/jimm/elixir-midifile
-- https://github.com/jimm/erlang-midilib
-- https://github.com/jimm/elixir_resource_discovery
+- [csvlixir](https://github.com/jimm/csvlixir)
+- [napper](https://github.com/jimm/napper)
+- [happi](https://github.com/jimm/happi)
+- [dynomizer](https://github.com/jimm/dynomizer)
+- [elixir](https://github.com/jimm/elixir-midifile)
+- [erlang](https://github.com/jimm/erlang-midilib)
+- [blister](https://github.com/jimm/blister)
+- [elixir](https://github.com/jimm/elixir_resource_discovery)
 
 ## CryptoPals
 
