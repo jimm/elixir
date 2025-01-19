@@ -7,14 +7,14 @@ including but not limited to:
 - [napper](https://github.com/jimm/napper)
 - [happi](https://github.com/jimm/happi)
 - [dynomizer](https://github.com/jimm/dynomizer)
-- [elixir](https://github.com/jimm/elixir-midifile)
-- [erlang](https://github.com/jimm/erlang-midilib)
+- [elixir-midifile](https://github.com/jimm/elixir-midifile)
+- [erlang-midilib](https://github.com/jimm/erlang-midilib)
 - [blister](https://github.com/jimm/blister)
-- [elixir](https://github.com/jimm/elixir_resource_discovery)
+- [elixir_resource_discovery](https://github.com/jimm/elixir_resource_discovery)
 
 ## CryptoPals
 
-http://cryptopals.com/, though I'm also working on those in Clojure.
+https://www.cryptopals.com/ though I'm also working on those in Clojure.
 
 ## Core MIDI
 

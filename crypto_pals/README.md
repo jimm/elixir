@@ -1,3 +1,3 @@
 # CryptoPals
 
-My solutions to the crypto puzzles at http://cryptopals.com/.
+My solutions to the crypto puzzles at http://www.cryptopals.com/
