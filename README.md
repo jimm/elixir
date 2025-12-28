@@ -12,10 +12,6 @@ including but not limited to:
 - [blister](https://github.com/jimm/blister)
 - [elixir_resource_discovery](https://github.com/jimm/elixir_resource_discovery)
 
-## CryptoPals
-
-https://www.cryptopals.com/ though I'm also working on those in Clojure.
-
 ## Core MIDI
 
 A MIDI file reader/writer. See https://github.com/jimm/elixir-midifile
