@@ -4,18 +4,19 @@ defmodule Todo.Database do
   @db_folder "./todo-persist"
   @num_workers 3
 
-  def start do
-    GenServer.start(__MODULE__, nil, name: __MODULE__)
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
   @impl GenServer
   def init(_) do
+    IO.puts("Starting database.")
     File.mkdir_p!(@db_folder)
 
     workers =
       0..(@num_workers - 1)
       |> Enum.reduce(%{}, fn i, workers ->
-        {:ok, worker} = Todo.DatabaseWorker.start(@db_folder)
+        {:ok, worker} = Todo.DatabaseWorker.start_link(@db_folder)
         Map.put(workers, i, worker)
       end)
 
