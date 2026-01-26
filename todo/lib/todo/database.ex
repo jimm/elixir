@@ -1,69 +1,47 @@
 defmodule Todo.Database do
-  use GenServer
-
   @db_folder "./todo-persist"
-  @num_workers 3
+  @pool_size 3
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-  end
-
-  @impl GenServer
-  def init(_) do
+  def start_link do
     IO.puts("Starting database.")
     File.mkdir_p!(@db_folder)
 
-    workers =
-      0..(@num_workers - 1)
-      |> Enum.reduce(%{}, fn i, workers ->
-        {:ok, worker} = Todo.DatabaseWorker.start_link(@db_folder)
-        Map.put(workers, i, worker)
-      end)
+    children = Enum.map(1..@pool_size, &worker_spec/1)
+    Supervisor.start_link(children, strategy: :one_for_one)
+  end
 
-    {:ok, workers}
+  def child_spec(_) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, []},
+      type: :supervisor
+    }
   end
 
   def store(key, data) do
-    GenServer.cast(__MODULE__, {:store, key, data})
+    key
+    |> choose_worker()
+    |> Todo.DatabaseWorker.store(key, data)
   end
 
   def get(key) do
-    GenServer.call(__MODULE__, {:get, key})
+    key
+    |> choose_worker()
+    |> Todo.DatabaseWorker.get(key)
   end
 
   def delete(key) do
-    GenServer.cast(__MODULE__, {:delete, key})
-  end
-
-  @impl GenServer
-  def handle_cast({:store, key, data}, workers) do
     key
-    |> choose_worker(workers)
-    |> Todo.DatabaseWorker.store(key, data)
-
-    {:noreply, workers}
-  end
-
-  @impl GenServer
-  def handle_cast({:delete, key}, workers) do
-    key
-    |> choose_worker(workers)
+    |> choose_worker()
     |> Todo.DatabaseWorker.delete(key)
-
-    {:noreply, workers}
   end
 
-  @impl GenServer
-  def handle_call({:get, key}, _, workers) do
-    data =
-      key
-      |> choose_worker(workers)
-      |> Todo.DatabaseWorker.get(key)
-
-    {:reply, data, workers}
+  defp worker_spec(worker_id) do
+    default_worker_spec = {Todo.DatabaseWorker, {@db_folder, worker_id}}
+    Supervisor.child_spec(default_worker_spec, id: worker_id)
   end
 
-  defp choose_worker(key, workers) do
-    Map.get(workers, :erlang.phash2(key, @num_workers))
+  defp choose_worker(key) do
+    :erlang.phash2(key, @pool_size) + 1
   end
 end

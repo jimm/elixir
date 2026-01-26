@@ -16,6 +16,10 @@ defmodule Todo.List do
     Enum.reduce(entries, %__MODULE__{}, &add_entry(&2, &1))
   end
 
+  def size(todo_list) do
+    map_size(todo_list.entries)
+  end
+
   @doc """
   Adds an entry to `todo_list`.
 
