@@ -17,7 +17,7 @@ defmodule Todo.Server do
       :ok,
       # initial state
       {todo_list_name, nil},
-      # read data later
+      # read data later; see handle_continue below
       {:continue, :init}
     }
   end
@@ -68,6 +68,8 @@ defmodule Todo.Server do
     {:reply, Todo.List.entries(todo_list, date), state, @expiry_idle_timeout}
   end
 
+  # Called async during process initialization. Since getting the db
+  # contents might be expensive, we do that here instead of in `init/1`.
   @impl GenServer
   def handle_continue(:init, {name, nil}) do
     todo_list = Todo.Database.get(name) || Todo.List.new()

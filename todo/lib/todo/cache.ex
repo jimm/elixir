@@ -12,6 +12,8 @@ defmodule Todo.Cache do
     }
   end
 
+  # Note to self: nothing else in this code (except tests) calls
+  # server_process. It's the "entry point" for users of todo lists.
   def server_process(todo_list_name) do
     case start_child(todo_list_name) do
       {:ok, pid} -> pid
