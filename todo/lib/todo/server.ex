@@ -68,6 +68,12 @@ defmodule Todo.Server do
     {:reply, Todo.List.entries(todo_list, date), state, @expiry_idle_timeout}
   end
 
+  @impl GenServer
+  def handle_info(:timeout, {name, todo_list}) do
+    IO.puts("Stopping todo server for #{name}.")
+    {:stop, :normal, {name, todo_list}}
+  end
+
   # Called async during process initialization. Since getting the db
   # contents might be expensive, we do that here instead of in `init/1`.
   @impl GenServer
