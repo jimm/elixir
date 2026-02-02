@@ -19,7 +19,7 @@ defmodule SimpleRegistry do
   def register(name) do
     Process.link(Process.whereis(__MODULE__))
 
-    if :ets.insert_new(__MODULE__, {key, self()}) do
+    if :ets.insert_new(__MODULE__, {name, self()}) do
       :ok
     else
       :error
