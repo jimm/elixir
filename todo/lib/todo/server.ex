@@ -50,7 +50,7 @@ defmodule Todo.Server do
   end
 
   @impl GenServer
-  def handle_cast({:udpate_entry, entry_id, updater_fn}, {name, todo_list}) do
+  def handle_cast({:update_entry, entry_id, updater_fn}, {name, todo_list}) do
     new_list = Todo.List.update_entry(todo_list, entry_id, updater_fn)
     Todo.Database.store(name, new_list)
     {:noreply, {name, new_list}, @expiry_idle_timeout}
