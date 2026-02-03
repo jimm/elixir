@@ -1,22 +1,19 @@
 defmodule Todo.Database do
-  @db_folder "./todo-persist"
-  @pool_size 3
-
   def start_link do
     IO.puts("Starting database.")
   end
 
   def child_spec(_) do
-    File.mkdir_p!(@db_folder)
+    File.mkdir_p!(db_dir())
 
     :poolboy.child_spec(
       __MODULE__,
       [
         name: {:local, __MODULE__},
         worker_module: Todo.DatabaseWorker,
-        size: @pool_size
+        size: db_pool_size()
       ],
-      [@db_folder]
+      [db_dir()]
     )
   end
 
@@ -45,5 +42,13 @@ defmodule Todo.Database do
         Todo.DatabaseWorker.delete(worker_pid, key)
       end
     )
+  end
+
+  defp db_dir() do
+    Application.fetch_env!(:todo, :db_dir)
+  end
+
+  defp db_pool_size() do
+    Application.fetch_env!(:todo, :db_pool_size)
   end
 end
