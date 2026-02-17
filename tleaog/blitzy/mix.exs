@@ -7,7 +7,7 @@ defmodule Blitzy.Mixfile do
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     excript: [main_module: Blitzy.CLI],
+     escript: [main_module: Blitzy.CLI],
      deps: deps]
   end
 
